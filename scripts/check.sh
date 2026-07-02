@@ -78,13 +78,20 @@ if [ $HAS_SECRET -eq 0 ]; then
 else
     FAIL=$((FAIL+1))
 fi
+# 自动检测：在 vibe-control 自身仓库还是被注入项目
+if [ -f "core/AI_CONTROL.md" ] && [ ! -d "vibe-control" ]; then
+    PREFIX=""
+else
+    PREFIX="vibe-control/"
+fi
+
 echo "检查控制文件完整性..."
-for file in "vibe-control/core/AI_CONTROL.md" "vibe-control/core/DEPENDENCY_MAP.md" "vibe-control/core/TASK_TEMPLATE.md" "vibe-control/rules/.cursorrules"; do
-    if [ -f "$file" ]; then
-        echo "✅ $file 存在"
+for file in "core/AI_CONTROL.md" "core/DEPENDENCY_MAP.md" "core/TASK_TEMPLATE.md" "rules/.cursorrules"; do
+    if [ -f "${PREFIX}${file}" ]; then
+        echo "✅ ${PREFIX}${file} 存在"
         PASS=$((PASS+1))
     else
-        echo "❌ $file 缺失"
+        echo "❌ ${PREFIX}${file} 缺失"
         FAIL=$((FAIL+1))
     fi
 done
