@@ -151,6 +151,7 @@ fi
 if git rev-parse --git-dir > /dev/null 2>&1; then
     HAS_MODS=0
     if ! git diff --quiet 2>/dev/null; then HAS_MODS=1; fi
+    if ! git diff --cached --quiet 2>/dev/null; then HAS_MODS=1; fi
     if [ -n "$(git ls-files --others --exclude-standard 2>/dev/null)" ]; then HAS_MODS=1; fi
     
     if [ $HAS_MODS -eq 1 ]; then
