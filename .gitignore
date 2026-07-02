@@ -1,2 +1,5 @@
 # 软链接在目标项目生成，自身仓库不跟踪
 .cursorrules
+AI_CONTROL.md
+DEPENDENCY_MAP.md
+TASK_TEMPLATE.md

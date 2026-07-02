@@ -46,14 +46,43 @@ if [ -d ".git" ]; then
     echo "✅ pre-commit 钩子已安装"
 fi
 
+# 4. 软链核心文件到项目根
+for file in AI_CONTROL.md DEPENDENCY_MAP.md TASK_TEMPLATE.md; do
+    src="$VIBE_ROOT/core/$file"
+    dst="$file"
+    if [ -f "$src" ] && [ ! -f "$dst" ]; then
+        # 自托管：文件在同级 core/；被注入：文件在 vibe-control/core/
+        if [ -f "vibe-control/core/$file" ]; then
+            ln -sf "vibe-control/core/$file" "$dst"
+        else
+            ln -sf "core/$file" "$dst"
+        fi
+        echo "✅ $dst 已链接"
+    elif [ ! -f "$src" ]; then
+        echo "⚠️  $src 不存在，跳过"
+    fi
+done
+
+# 5. 核心文件软链加入 .gitignore
+if [ -f ".gitignore" ]; then
+    for file in AI_CONTROL.md DEPENDENCY_MAP.md TASK_TEMPLATE.md; do
+        if ! grep -q "^$file$" .gitignore 2>/dev/null; then
+            echo "$file" >> .gitignore
+        fi
+    done
+    echo "✅ .gitignore 已添加核心文件条目"
+fi
+
 echo "================================"
 echo "🎉 注入完成！"
+echo ""
+echo "项目根新增软链："
+echo "  AI_CONTROL.md     - 总控文件"
+echo "  DEPENDENCY_MAP.md - 依赖地图"
+echo "  TASK_TEMPLATE.md  - 任务模板"
+echo "  .cursorrules      - AI 行为规则"
 echo ""
 echo "可用命令："
 echo "  npm run vibe-check    - 运行项目合规检查"
 echo "  npm run vibe-update   - 升级 vibe-control 到最新版本"
-echo ""
-echo "AI 协作文件："
-echo "  core/AI_CONTROL.md    - 总控文件（贴给 AI）"
-echo "  core/TASK_TEMPLATE.md - 任务模板（复制填写）"
-echo "  core/DEPENDENCY_MAP.md - 依赖地图（修改前必查）"
+echo "  bash vibe-control/scripts/sync-core.sh - 手动同步核心文件"
