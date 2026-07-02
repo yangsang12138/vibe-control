@@ -18,6 +18,13 @@ if [ -f "$VIBE_ROOT/rules/.cursorrules" ]; then
     else
         echo "⚠️  .cursorrules 已存在且不是软链接，跳过（请手动处理）"
     fi
+    # 将 .cursorrules 加入项目 .gitignore（软链接不应被目标项目跟踪）
+    if [ -f ".gitignore" ]; then
+        if ! grep -q "^\.cursorrules$" .gitignore 2>/dev/null; then
+            echo -e "\n# vibe-control 输出，不提交到目标仓库\n.cursorrules" >> .gitignore
+            echo "✅ .gitignore 已添加 .cursorrules"
+        fi
+    fi
 fi
 
 # 2. 在 package.json 中添加脚本
