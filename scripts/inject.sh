@@ -73,6 +73,33 @@ if [ -f ".gitignore" ]; then
     echo "✅ .gitignore 已添加核心文件条目"
 fi
 
+# 6. 生成 opencode 配置（每次对话自动加载核心文件 + 注册 skill）
+if [ ! -f ".opencode/opencode.json" ]; then
+    mkdir -p .opencode
+    # 判断：被注入模式下文件在 vibe-control/；自托管在同级
+    if [ -f "vibe-control/.opencode/skills/vibe-control/SKILL.md" ]; then
+        SKILL_PATH="vibe-control/.opencode/skills"
+    elif [ -f ".opencode/skills/vibe-control/SKILL.md" ]; then
+        SKILL_PATH=".opencode/skills"
+    else
+        SKILL_PATH=""
+    fi
+    cat > .opencode/opencode.json << EOF
+{
+  "\$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "$(if [ -f "vibe-control/core/AI_CONTROL.md" ]; then echo "vibe-control/core/AI_CONTROL.md"; else echo "core/AI_CONTROL.md"; fi)",
+    "$(if [ -f "vibe-control/core/DEPENDENCY_MAP.md" ]; then echo "vibe-control/core/DEPENDENCY_MAP.md"; else echo "core/DEPENDENCY_MAP.md"; fi)",
+    "$(if [ -f "vibe-control/core/TASK_TEMPLATE.md" ]; then echo "vibe-control/core/TASK_TEMPLATE.md"; else echo "core/TASK_TEMPLATE.md"; fi)"
+  ]$(if [ -n "$SKILL_PATH" ]; then echo ","
+    echo "  \"skills\": {"
+    echo "    \"paths\": [\"$SKILL_PATH\"]"
+    echo "  }"; fi)
+}
+EOF
+    echo "✅ .opencode/opencode.json 已生成"
+fi
+
 echo "================================"
 echo "🎉 注入完成！"
 echo ""
@@ -81,6 +108,9 @@ echo "  AI_CONTROL.md     - 总控文件"
 echo "  DEPENDENCY_MAP.md - 依赖地图"
 echo "  TASK_TEMPLATE.md  - 任务模板"
 echo "  .cursorrules      - AI 行为规则"
+echo ""
+echo "opencode 配置："
+echo "  .opencode/opencode.json - 自动加载核心文件 + Skill"
 echo ""
 echo "可用命令："
 echo "  npm run vibe-check    - 运行项目合规检查"
