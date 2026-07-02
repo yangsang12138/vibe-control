@@ -1,5 +1,3 @@
-# 软链接在目标项目生成，自身仓库不跟踪
+# 生成文件，不提交到目标仓库
 .cursorrules
-AI_CONTROL.md
-DEPENDENCY_MAP.md
-TASK_TEMPLATE.md
+.vibe
