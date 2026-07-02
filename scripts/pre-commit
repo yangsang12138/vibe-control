@@ -1,0 +1,6 @@
+#!/bin/bash
+# vibe-control pre-commit 钩子
+# 提交前自动运行合规检查
+
+echo "🔍 运行 vibe-control 预提交检查..."
+bash vibe-control/scripts/check.sh
