@@ -50,7 +50,15 @@ bash vibe-control/scripts/task-log.sh "<简要任务描述>"
 
 ### 2d. 等待用户确认
 
-将任务日志文件路径汇报给用户，等待确认后再进入第3步。
+使用 `question` 工具让用户点选（不要让其手动输入）：
+
+```
+options: ["确认执行", "修改方案", "取消"]
+```
+
+- 确认 → 进入第3步
+- 修改方案 → 回到 2b/2c 调整计划
+- 取消 → 终止
 
 ## 第3步：执行修改
 
@@ -124,15 +132,23 @@ bash vibe-control/scripts/check.sh
 
 ### 6a. 提示提交
 
-主动询问用户是否需要提交。不可静默结束。用户可能忘记 commit，导致所有修改停留在工作区。
+使用 `question` 工具让用户点选：
 
-用户确认后执行 `git commit`。
+```
+options: ["提交（推荐）", "暂不提交"]
+```
+
+选择"提交" → 执行 `git add -A && git commit`。"暂不提交" → 任务结束。
 
 ### 6b. 提示推送
 
-`git commit` 成功后，**必须**再次执行 `git status`。如果输出包含 `Your branch is ahead of`，说明有未推送的 commit，**立即主动询问用户是否需要 push**。
+`git commit` 成功后，**必须**再次执行 `git status`。如果输出包含 `Your branch is ahead of`，使用 `question` 工具：
 
-推送完成后才算任务真正结束。
+```
+options: ["推送（推荐）", "暂不推送"]
+```
+
+选择"推送" → 执行 `git push`。"暂不推送" → 任务结束。推送完成后才算任务真正结束。
 
 ### 推送失败处理
 
