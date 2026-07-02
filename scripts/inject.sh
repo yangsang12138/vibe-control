@@ -10,7 +10,7 @@ echo "================================"
 VIBE_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VIBE_OUT=".vibe"
 
-# 判断：被注入（子模块）还是自托管
+# 检测：被注入（子模块）还是自托管
 if [ -f "vibe-control/core/AI_CONTROL.md" ]; then
     MODE="injected"
 elif [ -f "core/AI_CONTROL.md" ]; then
@@ -20,8 +20,8 @@ else
     exit 1
 fi
 
-# 1. 创建 .vibe/ 目录（所有注入产物集中于此）
-mkdir -p "$VIBE_OUT/core"
+# 1. 创建 .vibe/ 目录
+mkdir -p "$VIBE_OUT"
 
 # 2. 注入规则文件
 if [ -f "$VIBE_ROOT/rules/.cursorrules" ]; then
@@ -29,21 +29,7 @@ if [ -f "$VIBE_ROOT/rules/.cursorrules" ]; then
     echo "✅ $VIBE_OUT/cursorrules 已链接"
 fi
 
-# 3. 注入核心模板文件
-for file in AI_CONTROL.md DEPENDENCY_MAP.md TASK_TEMPLATE.md; do
-    src="$VIBE_ROOT/core/$file"
-    dst="$VIBE_OUT/core/$file"
-    if [ -f "$src" ]; then
-        if [ "$MODE" = "injected" ]; then
-            ln -sf "../../vibe-control/core/$file" "$dst"
-        else
-            ln -sf "../../core/$file" "$dst"
-        fi
-        echo "✅ $dst 已链接"
-    fi
-done
-
-# 4. 生成 .vibe/README.md 清单
+# 3. 生成 .vibe/README.md 清单
 cat > "$VIBE_OUT/README.md" << 'VIBEMD'
 # vibe-control 注入清单
 
@@ -70,7 +56,7 @@ cat > "$VIBE_OUT/README.md" << 'VIBEMD'
 VIBEMD
 echo "✅ $VIBE_OUT/README.md 已生成"
 
-# 5. 加入 .gitignore
+# 4. 加入 .gitignore
 if [ -f ".gitignore" ]; then
     if ! grep -q "^\.vibe$" .gitignore 2>/dev/null; then
         echo ".vibe" >> .gitignore
@@ -78,7 +64,7 @@ if [ -f ".gitignore" ]; then
     fi
 fi
 
-# 6. 在 package.json 中添加脚本
+# 5+6+7. 在 package.json 添加脚本
 if [ -f "package.json" ]; then
     node -e "
         const pkg = require('./package.json');
@@ -89,22 +75,22 @@ if [ -f "package.json" ]; then
     " 2>/dev/null && echo "✅ package.json 已添加 vibe-check 和 vibe-update 脚本" || echo "⚠️  package.json 更新失败"
 fi
 
-# 7. 安装 git pre-commit 钩子
+# 5+6+8. 安装 git pre-commit 钩子
 if [ -d ".git" ]; then
     cp "$VIBE_ROOT/scripts/pre-commit" .git/hooks/pre-commit
     chmod +x .git/hooks/pre-commit
     echo "✅ pre-commit 钩子已安装"
 fi
 
-# 8. 生成 opencode 配置
+# 5+6+9. 生成 opencode 配置
 if [ ! -f ".opencode/opencode.json" ]; then
     mkdir -p .opencode
     if [ "$MODE" = "injected" ]; then
         SKILL_PATH="vibe-control/.opencode/skills"
-        INSTR_PREFIX="vibe-control/core"
+        INSTR_PREFIX=".vibe/core"
     else
         SKILL_PATH=".opencode/skills"
-        INSTR_PREFIX="core"
+        INSTR_PREFIX=".vibe/core"
     fi
     cat > .opencode/opencode.json << EOF
 {
@@ -122,12 +108,16 @@ EOF
     echo "✅ .opencode/opencode.json 已生成"
 fi
 
+# 5+6+10. 检测项目并填充模板
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+bash "$SCRIPT_DIR/sync-templates.sh" 2>/dev/null && echo "✅ 模板已根据项目信息填充"
+
 echo "================================"
 echo "🎉 注入完成！"
 echo ""
 echo "注入产物（$VIBE_OUT/）："
 echo "  $VIBE_OUT/cursorrules      - AI 行为规则"
-echo "  $VIBE_OUT/core/              - 核心模板文件"
+echo "  $VIBE_OUT/core/              - 核心模板文件（已填充）"
 echo "  $VIBE_OUT/README.md         - 注入清单"
 echo ""
 echo "IDE 配置见 README.md 中的 IDE 支持章节"
@@ -136,3 +126,4 @@ echo "可用命令："
 echo "  npm run vibe-check          - 运行合规检查"
 echo "  npm run vibe-update         - 升级 vibe-control"
 echo "  bash vibe-control/scripts/sync-core.sh - 同步核心文件"
+echo "  bash vibe-control/scripts/sync-templates.sh - 重新检测并填充模板"

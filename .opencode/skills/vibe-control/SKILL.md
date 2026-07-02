@@ -12,7 +12,7 @@ description: >
 
 ## 第1步：加载上下文
 
-读取 `core/AI_CONTROL.md` 和 `core/DEPENDENCY_MAP.md`，了解：
+读取 **`.vibe/core/AI_CONTROL.md`** 和 **`.vibe/core/DEPENDENCY_MAP.md`**（如不存在则读 `core/` 源文件），了解：
 - 项目技术栈和硬性约束
 - 模块间依赖关系
 - 修改协议
@@ -48,6 +48,14 @@ description: >
 - 检查是否有残留的注释代码
 - 检查是否引入了未确认的新依赖
 - 检查是否在代码中写入了敏感信息
+
+## 第5步：更新模板
+
+本次修改涉及的新模块、新依赖、新约束，同步到模板文件中：
+
+1. 如果新增了模块或依赖关系，更新 `.vibe/core/DEPENDENCY_MAP.md`
+2. 如果新增了约束或项目信息，更新 `.vibe/core/AI_CONTROL.md`
+3. 运行 `bash vibe-control/scripts/sync-templates.sh` 重新检测并更新模板
 
 ## 通用约束
 
