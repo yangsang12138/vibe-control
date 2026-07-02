@@ -96,14 +96,12 @@ for file in "core/AI_CONTROL.md" "core/DEPENDENCY_MAP.md" "core/TASK_TEMPLATE.md
     fi
 done
 
-# 检查 .cursorrules 链接
-if [ -L ".cursorrules" ]; then
-    echo "✅ .cursorrules 正确链接"
+# 检查 .vibe/cursorrules 链接
+if [ -f ".vibe/cursorrules" ]; then
+    echo "✅ .vibe/cursorrules 存在"
     PASS=$((PASS+1))
-elif [ -f ".cursorrules" ]; then
-    echo "⚠️  .cursorrules 存在但不是软链接"
 else
-    echo "❌ .cursorrules 缺失"
+    echo "❌ .vibe/cursorrules 缺失"
     FAIL=$((FAIL+1))
 fi
 

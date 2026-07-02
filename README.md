@@ -52,3 +52,17 @@ bash vibe-control/scripts/check.sh
 1. 在 vibe-control 仓库中优化模板或脚本
 2. 提交推送
 3. 在任意接入项目中执行 `bash vibe-control/scripts/sync-core.sh`
+
+## IDE 支持
+
+vibe-control 将所有文件注入到 `.vibe/` 目录，根目录不产生任何杂文件。各 IDE 读取规则的方式不同，**注入后需按以下方式配置**：
+
+| IDE | 配置方式 |
+|---|---|
+| **opencode CLI** | ✅ 自动生效。`.opencode/` 配置已注册，每次对话自动加载核心文件 |
+| **Cursor** | Settings → Rules → Project Rules，添加路径 `.vibe/cursorrules` |
+| **GitHub Copilot** | 创建 `.github/copilot-instructions.md`，内容为 `include .vibe/cursorrules` |
+| **Continue.dev** | 在 `~/.continue/config.json` 或项目 `.continuerc.json` 中设置 `"rules": [".vibe/cursorrules"]` |
+| **其他 IDE** | 在对应 AI 助手的规则配置中引用 `.vibe/cursorrules` |
+
+> 规则文件路径相对于项目根目录，始终填写 `.vibe/cursorrules` 即可。

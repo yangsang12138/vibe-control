@@ -27,12 +27,6 @@ mkdir -p "$VIBE_OUT/core"
 if [ -f "$VIBE_ROOT/rules/.cursorrules" ]; then
     ln -sf "$VIBE_ROOT/rules/.cursorrules" "$VIBE_OUT/cursorrules"
     echo "✅ $VIBE_OUT/cursorrules 已链接"
-    # 根目录的 .cursorrules（Cursor 硬性要求）
-    ln -sf "$VIBE_OUT/cursorrules" .cursorrules 2>/dev/null || true
-    if [ ! -L ".cursorrules" ]; then
-        ln -sf ".vibe/cursorrules" .cursorrules
-    fi
-    echo "✅ .cursorrules 已链接"
 fi
 
 # 3. 注入核心模板文件
@@ -64,23 +58,24 @@ cat > "$VIBE_OUT/README.md" << 'VIBEMD'
 | `core/DEPENDENCY_MAP.md` | `vibe-control/core/DEPENDENCY_MAP.md` | 模块依赖地图 |
 | `core/TASK_TEMPLATE.md` | `vibe-control/core/TASK_TEMPLATE.md` | 标准任务模板 |
 
-## 根目录适配文件
+## IDE 配置
 
-| 文件 | 说明 |
+各 IDE 读取规则文件的方式不同，请根据使用的 IDE 配置：
+
+| IDE | 操作 |
 |---|---|
-| `.cursorrules` | 软链 → `.vibe/cursorrules`，Cursor IDE 需要 |
-| `.opencode/` | 软链到 vibe-control 的 opencode 配置 |
+| **Cursor** | 打开 Settings → Rules → User Rules / Project Rules，添加 `.vibe/cursorrules` |
+| **opencode CLI** | 无需配置，`.opencode/` 已自动注册 |
+| **GitHub Copilot** | 在项目根创建 `.github/copilot-instructions.md`，内容 `include .vibe/cursorrules` |
 VIBEMD
 echo "✅ $VIBE_OUT/README.md 已生成"
 
 # 5. 加入 .gitignore
 if [ -f ".gitignore" ]; then
-    for entry in ".vibe" ".cursorrules"; do
-        if ! grep -q "^$entry$" .gitignore 2>/dev/null; then
-            echo "$entry" >> .gitignore
-        fi
-    done
-    echo "✅ .gitignore 已更新"
+    if ! grep -q "^\.vibe$" .gitignore 2>/dev/null; then
+        echo ".vibe" >> .gitignore
+        echo "✅ .gitignore 已更新"
+    fi
 fi
 
 # 6. 在 package.json 中添加脚本
@@ -135,8 +130,7 @@ echo "  $VIBE_OUT/cursorrules      - AI 行为规则"
 echo "  $VIBE_OUT/core/              - 核心模板文件"
 echo "  $VIBE_OUT/README.md         - 注入清单"
 echo ""
-echo "根目录适配："
-echo "  .cursorrules               - 软链 → $VIBE_OUT/cursorrules"
+echo "IDE 配置见 README.md 中的 IDE 支持章节"
 echo ""
 echo "可用命令："
 echo "  npm run vibe-check          - 运行合规检查"
