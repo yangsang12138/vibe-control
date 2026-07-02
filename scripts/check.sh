@@ -96,12 +96,12 @@ for file in "core/AI_CONTROL.md" "core/DEPENDENCY_MAP.md" "core/TASK_TEMPLATE.md
     fi
 done
 
-# 检查 .vibe/cursorrules 链接
-if [ -f ".vibe/cursorrules" ]; then
-    echo "✅ .vibe/cursorrules 存在"
+# 检查根目录 .cursorrules 链接
+if [ -f ".cursorrules" ]; then
+    echo "✅ .cursorrules 存在（根目录）"
     PASS=$((PASS+1))
 else
-    echo "❌ .vibe/cursorrules 缺失"
+    echo "❌ .cursorrules 缺失（根目录）"
     FAIL=$((FAIL+1))
 fi
 
@@ -124,6 +124,101 @@ if [ "$PREFIX" = "" ] && [ -d "scripts" ]; then
     else
         echo "⚠️  DEPENDENCY_MAP.md 可能过时，请更新"
         PASS=$((PASS+1))
+    fi
+
+    # 检查 README.md 是否覆盖所有脚本
+    echo "检查 README.md 文件说明表..."
+    MISSING_README=0
+    for script in scripts/*.sh; do
+        name=$(basename "$script")
+        if [ -f "$script" ]; then
+            if ! grep -q "$name" README.md 2>/dev/null; then
+                echo "⚠️  $name 未在 README.md 文件说明表中记录"
+                MISSING_README=1
+            fi
+        fi
+    done
+    if [ $MISSING_README -eq 0 ]; then
+        echo "✅ README.md 已覆盖所有脚本"
+        PASS=$((PASS+1))
+    else
+        echo "⚠️  README.md 可能过时，请更新文件说明表"
+        PASS=$((PASS+1))
+    fi
+fi
+
+# 检查任务日志（有未提交修改时强制要求）
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    HAS_MODS=0
+    if ! git diff --quiet 2>/dev/null; then HAS_MODS=1; fi
+    if [ -n "$(git ls-files --others --exclude-standard 2>/dev/null)" ]; then HAS_MODS=1; fi
+    
+    if [ $HAS_MODS -eq 1 ]; then
+        if [ ! -d ".vibe/tasks" ] || [ -z "$(ls -A .vibe/tasks 2>/dev/null)" ]; then
+            echo "❌ .vibe/tasks/ 为空 — 有未提交修改但缺少任务日志"
+            echo "   必须运行: bash ${PREFIX}scripts/task-log.sh \"任务描述\""
+            FAIL=$((FAIL+1))
+        else
+            # 检查任务日志是否已填写内容（非空模板）
+            FILLED=0
+            for log in .vibe/tasks/*.md; do
+                [ -f "$log" ] || continue
+                IMPACT=$(sed -n '/^## 影响分析/,/^## 修改计划/p' "$log" 2>/dev/null | grep -v '\-\-\-' | grep -c '^|.*[a-zA-Z0-9].*|' 2>/dev/null || echo 0)
+                CHECKLIST=$(sed -n '/^## 执行核对清单/,/^## 验证结果/p' "$log" 2>/dev/null | grep -v '\-\-\-' | grep -c '^|.*[a-zA-Z0-9].*|' 2>/dev/null || echo 0)
+                if [ "$IMPACT" -gt 0 ] 2>/dev/null && [ "$CHECKLIST" -gt 0 ] 2>/dev/null; then
+                    FILLED=1
+                    break
+                fi
+            done
+            if [ $FILLED -eq 1 ]; then
+                echo "✅ .vibe/tasks/ 存在任务日志（影响分析+核对清单已填写）"
+                PASS=$((PASS+1))
+
+                # 对齐检查：所有已修改文件必须出现在影响分析表和核对清单（✅）中
+                ALL_MODS=$( {
+                    git diff --cached --name-only 2>/dev/null
+                    git diff --name-only 2>/dev/null
+                    git ls-files --others --exclude-standard 2>/dev/null | grep -v '^\.vibe/'
+                } | sort -u)
+                UNREPORTED=0
+                for file in $ALL_MODS; do
+                    [ -f "$file" ] || continue
+                    case "$file" in
+                        .vibe/*|vibe-control/*) continue ;;
+                    esac
+                    FNAME=$(basename "$file")
+                    FOUND_IMPACT=0
+                    FOUND_CHECK=0
+                    for log in .vibe/tasks/*.md; do
+                        [ -f "$log" ] || continue
+                        # 影响分析表
+                        [ $FOUND_IMPACT -eq 0 ] && sed -n '/^## 影响分析/,/^## 修改计划/p' "$log" 2>/dev/null | grep -qF "$FNAME" 2>/dev/null && FOUND_IMPACT=1
+                        # 核对清单（状态列必须是 ✅）
+                        [ $FOUND_CHECK -eq 0 ] && sed -n '/^## 执行核对清单/,/^## 验证结果/p' "$log" 2>/dev/null | grep -v '\-\-\-' | grep '^| ✅' | grep -qF "$FNAME" 2>/dev/null && FOUND_CHECK=1
+                        [ $FOUND_IMPACT -eq 1 ] && [ $FOUND_CHECK -eq 1 ] && break
+                    done
+                    if [ $FOUND_IMPACT -eq 0 ]; then
+                        echo "❌ $file — 已修改但未出现在影响分析中"
+                        UNREPORTED=1
+                    fi
+                    if [ $FOUND_CHECK -eq 0 ]; then
+                        echo "❌ $file — 已修改但核对清单未标记 ✅"
+                        UNREPORTED=1
+                    fi
+                done
+                if [ $UNREPORTED -eq 0 ]; then
+                    echo "✅ 所有修改文件已记录：影响分析 ✅ + 核对清单 ✅"
+                    PASS=$((PASS+1))
+                else
+                    echo "   请在 .vibe/tasks/*.md 的影响分析表中补录上述文件"
+                    FAIL=$((FAIL+1))
+                fi
+            else
+                echo "❌ .vibe/tasks/ 中有日志文件，但影响分析表和核对清单未填写"
+                echo "   至少填写影响分析一行 + 核对清单一行，不得留空表提交"
+                FAIL=$((FAIL+1))
+            fi
+        fi
     fi
 fi
 

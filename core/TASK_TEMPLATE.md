@@ -4,6 +4,10 @@
 
 ---
 
+## 任务日志
+- 日志路径：`.vibe/tasks/YYYYMMDD-HHMM-描述.md`
+- 生成命令：`bash vibe-control/scripts/task-log.sh "描述"`
+
 ## 任务类型
 - [ ] 新功能开发
 - [ ] 功能修改（无契约变更）

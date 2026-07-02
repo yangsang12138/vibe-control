@@ -25,12 +25,19 @@ graph TD
         J[scripts/sync-core.sh]
         K[scripts/update.sh]
     end
+    subgraph 跟踪
+        T[scripts/task-log.sh]
+    end
+    subgraph 工具
+        U[scripts/status.sh]
+        V[scripts/pr-check.sh]
+    end
     subgraph 验证
         L[scripts/check.sh]
         M[scripts/pre-commit]
     end
     subgraph 输出
-        N[.vibe/cursorrules]
+        N[.cursorrules]
         O[.vibe/core/AI_CONTROL.md]
         P[.vibe/core/DEPENDENCY_MAP.md]
         Q[.vibe/core/TASK_TEMPLATE.md]
@@ -53,6 +60,8 @@ graph TD
     H --> N
     H --> R
     H --> S
+    T --> F
+    T --> N
     L --> M
 ```
 
@@ -64,6 +73,9 @@ graph TD
 | `scripts/fill-templates.sh` | sync-templates.sh, inject.sh | 高 | 占位符映射与 detect.json key 一致；输出路径与 opencode.json 中 instructions 一致 |
 | `scripts/inject.sh` | init.sh, sync-core.sh | 极高 | 每次修改 inject 行为后必须重新注入测试；.vibe/ 输出结构变化需同步 check.sh 和 .gitignore |
 | `scripts/check.sh` | pre-commit | 高 | check 项增减需对应更新 pre-commit 预期 |
+| `scripts/status.sh` | 无（叶子节点） | 低 | 只读工具，修改后运行一次确认输出正确 |
+| `scripts/pr-check.sh` | check.sh | 中 | 依赖 check.sh 返回值；日志摘要格式需与 task-log 模板一致 |
+| `scripts/task-log.sh` | check.sh, fill-templates.sh | 中 | 新 key 需同步 PLACEHOLDER_MAP；check.sh 中任务日志检查逻辑需同步格式 |
 | `.opencode/opencode.json` | opencode CLI | 高 | instructions 路径必须指向实际存在的文件（core/* 或 .vibe/core/*） |
 | `core/*.md` 模板 | fill-templates.sh | 中 | 模板中的占位符名与 detect.json 的 key 以及 PLACEHOLDER_MAP 三方一致 |
 
@@ -79,6 +91,22 @@ graph TD
 - [ ] scripts/detect.sh — 确保 detect.json 输出对应 key
 - [ ] .vibe/core/* — 测试填充结果
 - [ ] 各 core/*.md 模板 — 检查占位符是否被正确映射
+
+### 修改 task-log.sh
+- [ ] scripts/task-log.sh — 日志模板格式
+- [ ] scripts/check.sh — 任务日志检查逻辑
+- [ ] SKILL.md — 工作流中引用的 task-log 路径
+- [ ] .vibe/tasks/ — 测试日志生成结果
+
+### 修改 status.sh
+- [ ] scripts/status.sh — 输出内容和格式
+- [ ] README.md — 文件说明表是否同步
+- [ ] 两种模式（自托管 / 注入）分别测试
+
+### 修改 pr-check.sh
+- [ ] scripts/pr-check.sh — check.sh 调用 + 日志解析 + 摘要格式
+- [ ] scripts/check.sh — 如 check 项变化，需确认 pr-check 仍正确捕获退出码
+- [ ] README.md — 文件说明表是否同步
 
 ### 修改 inject.sh
 - [ ] scripts/inject.sh — 注入逻辑

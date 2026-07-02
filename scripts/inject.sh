@@ -23,10 +23,10 @@ fi
 # 1. 创建 .vibe/ 目录
 mkdir -p "$VIBE_OUT"
 
-# 2. 注入规则文件
+# 2. 注入规则文件 → 根目录
 if [ -f "$VIBE_ROOT/rules/.cursorrules" ]; then
-    ln -sf "$VIBE_ROOT/rules/.cursorrules" "$VIBE_OUT/cursorrules"
-    echo "✅ $VIBE_OUT/cursorrules 已链接"
+    ln -sf "$VIBE_ROOT/rules/.cursorrules" ".cursorrules"
+    echo "✅ .cursorrules 已链接（根目录）"
 fi
 
 # 3. 生成 .vibe/README.md 清单
@@ -39,7 +39,7 @@ cat > "$VIBE_OUT/README.md" << 'VIBEMD'
 
 | 文件 | 来源 | 用途 |
 |---|---|---|
-| `cursorrules` | `vibe-control/rules/.cursorrules` | AI 行为规则 |
+| `../.cursorrules` | `vibe-control/rules/.cursorrules` | AI 行为规则（根目录） |
 | `core/AI_CONTROL.md` | `vibe-control/core/AI_CONTROL.md` | 项目总控文件 |
 | `core/DEPENDENCY_MAP.md` | `vibe-control/core/DEPENDENCY_MAP.md` | 模块依赖地图 |
 | `core/TASK_TEMPLATE.md` | `vibe-control/core/TASK_TEMPLATE.md` | 标准任务模板 |
@@ -50,9 +50,9 @@ cat > "$VIBE_OUT/README.md" << 'VIBEMD'
 
 | IDE | 操作 |
 |---|---|
-| **Cursor** | 打开 Settings → Rules → User Rules / Project Rules，添加 `.vibe/cursorrules` |
-| **opencode CLI** | 无需配置，`.opencode/` 已自动注册 |
-| **GitHub Copilot** | 在项目根创建 `.github/copilot-instructions.md`，内容 `include .vibe/cursorrules` |
+| **Cursor** | ✅ 自动生效（`.cursorrules` 在根目录） |
+| **opencode CLI** | ✅ 自动生效（`.opencode/` 在根目录） |
+| **GitHub Copilot** | 在项目根创建 `.github/copilot-instructions.md`，内容 `include .cursorrules` |
 VIBEMD
 echo "✅ $VIBE_OUT/README.md 已生成"
 
@@ -61,6 +61,10 @@ if [ -f ".gitignore" ]; then
     if ! grep -q "^\.vibe$" .gitignore 2>/dev/null; then
         echo ".vibe" >> .gitignore
         echo "✅ .gitignore 已更新"
+    fi
+    if ! grep -q "^\.cursorrules$" .gitignore 2>/dev/null; then
+        echo ".cursorrules" >> .gitignore
+        echo "✅ .gitignore 已添加 .cursorrules"
     fi
 fi
 
@@ -115,10 +119,11 @@ bash "$SCRIPT_DIR/sync-templates.sh" 2>/dev/null && echo "✅ 模板已根据项
 echo "================================"
 echo "🎉 注入完成！"
 echo ""
-echo "注入产物（$VIBE_OUT/）："
-echo "  $VIBE_OUT/cursorrules      - AI 行为规则"
-echo "  $VIBE_OUT/core/              - 核心模板文件（已填充）"
-echo "  $VIBE_OUT/README.md         - 注入清单"
+echo "注入产物："
+echo "  .cursorrules              - AI 行为规则（根目录）"
+echo "  .opencode/                - opencode CLI 配置（根目录）"
+echo "  $VIBE_OUT/core/           - 核心模板文件（已填充）"
+echo "  $VIBE_OUT/README.md       - 注入清单"
 echo ""
 echo "IDE 配置见 README.md 中的 IDE 支持章节"
 echo ""

@@ -1,6 +1,7 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "instructions": [
+    "YOU MUST follow the vibe-control workflow for every coding task: 1) run task-log.sh to create .vibe/tasks/*.md BEFORE any code changes, 2) fill impact analysis in the log, 3) wait for user confirmation, 4) execute changes per file updating the checklist, 5) verify and update templates before commit. Skipping step 1-2 is FORBIDDEN.",
     "core/AI_CONTROL.md",
     "core/DEPENDENCY_MAP.md",
     "core/TASK_TEMPLATE.md"

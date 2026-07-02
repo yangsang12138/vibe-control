@@ -26,12 +26,40 @@ bash vibe-control/scripts/inject.sh
 bash vibe-control/scripts/sync-core.sh
 ```
 
+### 查看注入状态
+```bash
+bash vibe-control/scripts/status.sh
+```
+
+### PR 前完整检查
+```bash
+bash vibe-control/scripts/pr-check.sh
+```
+
 ### 运行项目合规检查
 ```bash
 npm run vibe-check
 # 或直接执行
 bash vibe-control/scripts/check.sh
 ```
+
+### 任务日志（AI 工作流强制）
+每次 AI 编码任务开始时，必须生成任务日志以跟踪修改过程：
+
+```bash
+bash vibe-control/scripts/task-log.sh "任务描述"
+```
+
+该命令创建 `.vibe/tasks/YYYYMMDD-HHMM-描述.md`，AI 在任务过程中逐步填写：
+1. **影响分析** — 列出所有受影响文件和符号
+2. **修改计划** — 每文件的最小修改方案
+3. **执行核对清单** — 逐文件确认编译/测试结果
+4. **验证结果** — 类型检查、Lint、敏感信息扫描
+
+提交前 `check.sh` 检测任务日志：
+- 无日志 → ❌ exit 1，**提交被阻止**
+- 有日志但**影响分析表或核对清单为空** → ❌ exit 1，**提交被阻止**
+- 两表均已填写至少一行 → ✅ 放行
 
 ## 文件说明
 
@@ -43,8 +71,14 @@ bash vibe-control/scripts/check.sh
 | `rules/.cursorrules` | Cursor AI 自动遵守的行为规则 |
 | `scripts/init.sh` | **一键初始化**，添加子模块 + 注入 + 软链 |
 | `scripts/inject.sh` | 注入引擎，将控制体系链接到项目 |
+| `scripts/detect.sh` | 项目自动检测，输出 .vibe/detect.json |
+| `scripts/fill-templates.sh` | 模板填充，将 core/*.md 占位符替换为实际值 |
+| `scripts/sync-templates.sh` | 一键同步，detect + fill 合并执行 |
 | `scripts/sync-core.sh` | **同步核心文件**，更新子模块 + 刷新软链 |
 | `scripts/check.sh` | 合规检查，验证项目是否满足基本约束 |
+| `scripts/task-log.sh` | 任务日志生成脚本，为每次编码任务创建跟踪记录 |
+| `scripts/status.sh` | 查看 vibe-control 状态：版本、模式、注入产物 |
+| `scripts/pr-check.sh` | PR 前完整检查，汇总任务日志摘要 + 合规状态 |
 | `scripts/update.sh` | 升级脚本，等同 sync-core.sh |
 
 ## 维护方式
@@ -55,14 +89,14 @@ bash vibe-control/scripts/check.sh
 
 ## IDE 支持
 
-vibe-control 将所有文件注入到 `.vibe/` 目录，根目录不产生任何杂文件。各 IDE 读取规则的方式不同，**注入后需按以下方式配置**：
+vibe-control 将配置文件注入根目录，其余产物全部集中在 `.vibe/`。各 IDE 读取方式如下：
 
 | IDE | 配置方式 |
 |---|---|
-| **opencode CLI** | ✅ 自动生效。`.opencode/` 配置已注册，每次对话自动加载核心文件 |
-| **Cursor** | Settings → Rules → Project Rules，添加路径 `.vibe/cursorrules` |
-| **GitHub Copilot** | 创建 `.github/copilot-instructions.md`，内容为 `include .vibe/cursorrules` |
-| **Continue.dev** | 在 `~/.continue/config.json` 或项目 `.continuerc.json` 中设置 `"rules": [".vibe/cursorrules"]` |
-| **其他 IDE** | 在对应 AI 助手的规则配置中引用 `.vibe/cursorrules` |
+| **opencode CLI** | ✅ 自动生效。`.opencode/` 在根目录，每次对话自动加载核心文件 |
+| **Cursor** | ✅ 自动生效。`.cursorrules` 在根目录，Cursor 自动读取 |
+| **GitHub Copilot** | 创建 `.github/copilot-instructions.md`，内容为 `include .cursorrules` |
+| **Continue.dev** | 在 `~/.continue/config.json` 或项目 `.continuerc.json` 中设置 `"rules": [".cursorrules"]` |
+| **其他 IDE** | 在对应 AI 助手的规则配置中引用 `.cursorrules` |
 
-> 规则文件路径相对于项目根目录，始终填写 `.vibe/cursorrules` 即可。
+> `.cursorrules` 和 `.opencode/` 均在 `.gitignore` 中，不会提交到目标仓库。

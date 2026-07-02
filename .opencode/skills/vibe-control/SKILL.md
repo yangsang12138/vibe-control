@@ -2,56 +2,82 @@
 name: vibe-control
 description: >
   Use when the user describes a coding task in a project governed by vibe-control.
-  Triggers on keywords: modify, implement, add, change, refactor, fix, update, new feature, bug.
+  Triggers on keywords: modify, implement, add, change, refactor, fix, update, new feature, bug, execute, run, do, apply.
   Guides the AI through impact analysis, modification protocol, and quality gates.
 ---
 
-# vibe-control 工作流
+# vibe-control 强制工作流
 
-项目已接入 vibe-control 控制体系。请按以下流程响应所有编码任务。
+项目已接入 vibe-control 控制体系。**你必须严格按以下流程响应所有编码任务，不得跳过任何步骤。**
+
+> 🚫 **硬性禁令**：在任务日志文件（`.vibe/tasks/*.md`）创建并完成影响分析之前，**绝对禁止**执行任何文件修改操作（包括 write、edit、bash 中的 sed/rm/mv 等）。必须先建日志，再写代码。违反此规则将被 check.sh 硬拦截（exit 1）。
+>
+> ⚠️ 违规处罚：跳过第2步（影响分析）直接写代码，或跳过第5步（模板更新）直接提交，视为任务失败。用户有权要求回滚。
 
 ## 第1步：加载上下文
 
-读取 **`.vibe/core/AI_CONTROL.md`** 和 **`.vibe/core/DEPENDENCY_MAP.md`**（如不存在则读 `core/` 源文件），了解：
+**必须**读取 **`core/AI_CONTROL.md`** 和 **`core/DEPENDENCY_MAP.md`**（如果 `.vibe/core/` 存在则读它），了解：
 - 项目技术栈和硬性约束
 - 模块间依赖关系
 - 修改协议
 
-## 第2步：输出影响分析
+## 第2步：创建任务日志并输出影响分析
 
-在写任何代码前，输出：
+**开始任何编码工作前，必须执行以下操作：**
 
+### 2a. 创建任务日志文件
+
+```bash
+bash vibe-control/scripts/task-log.sh "<简要任务描述>"
 ```
-## 影响分析
+
+该命令会生成 `.vibe/tasks/YYYYMMDD-HHMM-描述.md`，作为本次任务的记录文件。
+
+### 2b. 填写影响分析
+
+在任务日志文件的 `## 影响分析` 表格中填写本次修改的影响范围。**必须填写完整文件路径**（相对项目根目录，如 `scripts/check.sh` 而非 `check.sh`），因为 `check.sh` 会根据该表做 git staging 对齐检测。
+
 | 受影响文件 | 涉及符号 | 影响类型（直接/间接） |
 |---|---|---|
+| scripts/check.sh | 任务日志检查逻辑 | 直接 |
 
-## 修改计划
+### 2c. 输出修改计划
+
+在任务日志文件的 `## 修改计划` 表格中填写：
+
 | 文件 | 修改内容 | 向后兼容 |
 |---|---|---|
-```
 
-等待用户确认后再进入下一步。
+### 2d. 等待用户确认
+
+将任务日志文件路径汇报给用户，等待确认后再进入第3步。
 
 ## 第3步：执行修改
 
-逐文件修改。每完成一个文件，核对：
+逐文件修改。**每完成一个文件**，必须在任务日志文件的 `## 执行核对清单` 中更新一行，**状态列填写 `✅`**：
 
-```
-[已完成] 文件名 | 修改内容 | 类型检查通过 | 测试通过
-```
+| 状态 | 文件 | 修改内容 | 类型检查通过 | 测试通过 |
+|---|---|---|---|---|
+| ✅ | scripts/check.sh | 对齐检查 | N/A | N/A |
+
+> ⚠️ `check.sh` 会验证：每个修改文件必须在核对清单中有 `| ✅ | 文件名 | ...` 行。状态留空或写别的 → ❌ 拦截。
+- 该文件是否在影响分析列表中
+- 修改方案是否与修改计划一致
 
 ## 第4步：验证
 
-- 运行 `[类型检查命令]` 和 `[Lint 命令]`
-- 运行已有测试
-- 检查是否有残留的注释代码
-- 检查是否引入了未确认的新依赖
-- 检查是否在代码中写入了敏感信息
+**必须**运行以下检查（在任务日志文件的 `## 验证结果` 中逐项标记）：
+- [ ] 运行 `[类型检查命令]` 和 `[Lint 命令]`
+- [ ] 运行已有测试
+- [ ] 检查是否有残留的注释代码
+- [ ] 检查是否引入了未确认的新依赖
+- [ ] 检查是否在代码中写入了敏感信息
+
+全部通过后才可进入第5步。
 
 ## 第5步：更新模板（必须执行）
 
-> ⚠️ **在提交之前**，必须完成以下检查。这是确保控制体系与代码保持同步的关键步骤。
+> ⚠️ **在提交之前，必须完成以下检查。** 这是确保控制体系与代码保持同步的关键步骤。
 
 ### 5a. 检查 DEPENDENCY_MAP.md 是否过时
 
@@ -62,7 +88,7 @@ description: >
 ### 5b. 检查 AI_CONTROL.md 是否过时
 
 - 新增了依赖包 → 是否需要更新"依赖引入管控"相关说明？
-- 新增了目录结构（types、components/ui 等）→ 是否需要更新约束中引用的文件路径？
+- 新增了目录结构 → 是否需要更新约束中引用的文件路径？
 - 修改了技术栈 → 是否需要更新项目基本信息？
 
 ### 5c. 运行模板同步
@@ -70,6 +96,7 @@ description: >
 ```bash
 bash vibe-control/scripts/sync-templates.sh
 ```
+
 这步会自动重新检测项目结构并填充 `.vibe/core/*.md`。
 
 ### 5d. 运行合规检查
@@ -77,7 +104,25 @@ bash vibe-control/scripts/sync-templates.sh
 ```bash
 bash vibe-control/scripts/check.sh
 ```
+
 确保新加的模块没有被 DEPENDENCY_MAP 过时检测标记为 warning。
+
+### 5e. 检查 README.md 是否需要更新（必须执行）
+
+> 新增了脚本、修改了命令名称、调整了注入产物清单时，**必须同步更新 README.md**。
+
+对照本次修改检查：
+- 新增文件（脚本/核心文件）→ README.md 的文件说明表是否已添加对应行？
+- 修改了命令用法 → README.md 的命令示例是否同步？
+- 调整了注入产物 → README.md 的快速开始章节是否反映最新结构？
+
+遗漏此步骤提交将被 `check.sh` 拦截。
+
+## 第6步：提示提交
+
+> 全部验证通过后，**必须**执行 `git status` 查看待提交文件清单，并主动询问用户是否需要提交。
+
+不可静默结束。用户可能忘记 commit，导致所有修改停留在工作区。
 
 ## 通用约束
 
