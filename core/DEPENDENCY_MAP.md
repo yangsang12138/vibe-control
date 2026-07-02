@@ -6,66 +6,88 @@
 
 ## 依赖关系图
 
-将项目中各层之间的依赖关系画为流程图，箭头表示"依赖方向"，即被修改方 → 受影响方。
-
 ```mermaid
 graph TD
-    A[类型/数据模型定义] --> B[数据访问/服务层]
-    A --> C[业务逻辑层]
-    B --> C
-    C --> D[UI/展示层]
-```
+    subgraph 上游模板
+        A[core/AI_CONTROL.md]
+        B[core/DEPENDENCY_MAP.md]
+        C[core/TASK_TEMPLATE.md]
+        D[rules/.cursorrules]
+    end
+    subgraph 检测填充
+        E[scripts/detect.sh]
+        F[scripts/fill-templates.sh]
+        G[.vibe/detect.json]
+    end
+    subgraph 注入
+        H[scripts/inject.sh]
+        I[scripts/init.sh]
+        J[scripts/sync-core.sh]
+        K[scripts/update.sh]
+    end
+    subgraph 验证
+        L[scripts/check.sh]
+        M[scripts/pre-commit]
+    end
+    subgraph 输出
+        N[.vibe/cursorrules]
+        O[.vibe/core/AI_CONTROL.md]
+        P[.vibe/core/DEPENDENCY_MAP.md]
+        Q[.vibe/core/TASK_TEMPLATE.md]
+        R[.vibe/README.md]
+        S[.opencode/opencode.json]
+    end
 
-> 根据项目实际情况增减层级。典型层次（任选适用项）：
-> - 类型定义（types / models / DTO）
-> - 数据访问（services / repository / DAO）
-> - API 路由（controller / handler / resolver）
-> - 业务逻辑（hooks / composables / domain）
-> - UI 展示（components / pages / views）
-> - 共享工具（utils / lib / helpers）
+    I --> H
+    J --> H
+    K --> J
+    H --> E
+    E --> G
+    G --> F
+    A --> F
+    B --> F
+    C --> F
+    F --> O
+    F --> P
+    F --> Q
+    H --> N
+    H --> R
+    H --> S
+    L --> M
+```
 
 ## 关键依赖矩阵
 
-> 在下表中列出项目的核心模块及它们的上下游依赖方。示例格式：
-
 | 被依赖方（修改它会影响） | 依赖方列表 | 影响程度 | 检查要点 |
 |---|---|---|---|
-| **[模块A]** | [列出依赖它的文件/模块] | 高/中/低 | [修改后需要验证哪些行为] |
-| **[模块B]** | [列出依赖它的文件/模块] | 高/中/低 | [修改后需要验证哪些行为] |
+| `scripts/detect.sh` | fill-templates.sh, sync-templates.sh, inject.sh | 高 | detect.json 的 key 名与 fill-templates 的 PLACEHOLDER_MAP 必须同步 |
+| `scripts/fill-templates.sh` | sync-templates.sh, inject.sh | 高 | 占位符映射与 detect.json key 一致；输出路径与 opencode.json 中 instructions 一致 |
+| `scripts/inject.sh` | init.sh, sync-core.sh | 极高 | 每次修改 inject 行为后必须重新注入测试；.vibe/ 输出结构变化需同步 check.sh 和 .gitignore |
+| `scripts/check.sh` | pre-commit | 高 | check 项增减需对应更新 pre-commit 预期 |
+| `.opencode/opencode.json` | opencode CLI | 高 | instructions 路径必须指向实际存在的文件（core/* 或 .vibe/core/*） |
+| `core/*.md` 模板 | fill-templates.sh | 中 | 模板中的占位符名与 detect.json 的 key 以及 PLACEHOLDER_MAP 三方一致 |
 
-### 填写指南
+## 修改检查清单
 
-- **被依赖方**：一个经常被其他模块引用的核心模块（类型定义、API 封装、鉴权中间件等）
-- **依赖方列表**：通过全局搜索引用关系来确定，列出所有 `import` 或调用该模块的文件
-- **影响程度**：
-  - **极高** — 涉及数据库结构或外部接口契约，修改可能导致数据丢失或外部不可用
-  - **高** — 涉及核心类型或 API 签名，大量文件直接依赖
-  - **中** — 涉及 UI 组件 Props 或工具函数签名，影响范围有限
-  - **低** — 仅内部实现变更，不影响外部接口
-- **检查要点**：修改后必须逐一验证的关键行为
+### 修改 detect.sh
+- [ ] scripts/detect.sh — 检测逻辑本身
+- [ ] scripts/fill-templates.sh — PLACEHOLDER_MAP 是否需同步新 key
+- [ ] .vibe/detect.json — 测试检测输出格式
 
-## 修改检查清单模板
+### 修改 fill-templates.sh
+- [ ] scripts/fill-templates.sh — 替换逻辑
+- [ ] scripts/detect.sh — 确保 detect.json 输出对应 key
+- [ ] .vibe/core/* — 测试填充结果
+- [ ] 各 core/*.md 模板 — 检查占位符是否被正确映射
 
-当修改 **[模块名称]** 时，复制以下模板按顺序逐项检查：
+### 修改 inject.sh
+- [ ] scripts/inject.sh — 注入逻辑
+- [ ] scripts/check.sh — 检查项是否需同步
+- [ ] .gitignore — .vibe/ 忽略规则
+- [ ] 自托管：重跑 inject.sh 验证
 
-```
-### 修改 [模块名称]
-- [ ] [定义文件] — 修改定义本身
-- [ ] [关联文件1] — [需要适配什么]
-- [ ] [关联文件2] — [需要适配什么]
-- [ ] [关联测试] — [验证方式]
-```
-
-### 一般检查流程
-
-1. **搜索引用** — 使用 IDE 的"查找所有引用"或 `grep` 搜索该模块的导入语句
-2. **列出影响链** — 从底层（类型/数据）向上层（UI）逐层追踪
-3. **逐层验证** — 每层修改后运行该层相关测试
-4. **回归检查** — 最终运行全量测试和类型检查
-
-## 新增模块时的要求
-
-向项目新增模块时，必须同步更新本文件：
-- 在依赖关系图中增加新节点和连线
-- 在依赖矩阵中增加新行的上下游关系
-- 为高影响新增模块编写修改检查清单
+### 新增脚本
+- [ ] 在依赖关系图中增加节点和连线
+- [ ] 在依赖矩阵中增加新行的上下游关系
+- [ ] 检查是否有调用链上游需要同步（如 inject.sh 检测并调 sync-templates.sh）
+- [ ] 更新 .vibe/core/DEPENDENCY_MAP.md（跑 sync-templates.sh）

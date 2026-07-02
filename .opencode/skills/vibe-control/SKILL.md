@@ -49,13 +49,35 @@ description: >
 - 检查是否引入了未确认的新依赖
 - 检查是否在代码中写入了敏感信息
 
-## 第5步：更新模板
+## 第5步：更新模板（必须执行）
 
-本次修改涉及的新模块、新依赖、新约束，同步到模板文件中：
+> ⚠️ **在提交之前**，必须完成以下检查。这是确保控制体系与代码保持同步的关键步骤。
 
-1. 如果新增了模块或依赖关系，更新 `.vibe/core/DEPENDENCY_MAP.md`
-2. 如果新增了约束或项目信息，更新 `.vibe/core/AI_CONTROL.md`
-3. 运行 `bash vibe-control/scripts/sync-templates.sh` 重新检测并更新模板
+### 5a. 检查 DEPENDENCY_MAP.md 是否过时
+
+对照本次修改涉及的文件清单，检查 `DEPENDENCY_MAP.md`：
+- 新增的文件/模块是否在依赖关系图和矩阵中？
+- 移除了的文件/模块是否已从地图中清理？
+
+### 5b. 检查 AI_CONTROL.md 是否过时
+
+- 新增了依赖包 → 是否需要更新"依赖引入管控"相关说明？
+- 新增了目录结构（types、components/ui 等）→ 是否需要更新约束中引用的文件路径？
+- 修改了技术栈 → 是否需要更新项目基本信息？
+
+### 5c. 运行模板同步
+
+```bash
+bash vibe-control/scripts/sync-templates.sh
+```
+这步会自动重新检测项目结构并填充 `.vibe/core/*.md`。
+
+### 5d. 运行合规检查
+
+```bash
+bash vibe-control/scripts/check.sh
+```
+确保新加的模块没有被 DEPENDENCY_MAP 过时检测标记为 warning。
 
 ## 通用约束
 

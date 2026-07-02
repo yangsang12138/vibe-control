@@ -105,6 +105,28 @@ else
     FAIL=$((FAIL+1))
 fi
 
+# 检查 DEPENDENCY_MAP 是否过时（仅限 vibe-control 自身仓库）
+if [ "$PREFIX" = "" ] && [ -d "scripts" ]; then
+    echo "检查 DEPENDENCY_MAP 是否过时..."
+    DEPRECATED=0
+    for script in scripts/*.sh; do
+        name=$(basename "$script")
+        if [ -f "$script" ]; then
+            if ! grep -q "$name" core/DEPENDENCY_MAP.md 2>/dev/null; then
+                echo "⚠️  $name 未在 DEPENDENCY_MAP.md 中记录"
+                DEPRECATED=1
+            fi
+        fi
+    done
+    if [ $DEPRECATED -eq 0 ]; then
+        echo "✅ DEPENDENCY_MAP.md 与 scripts/ 结构一致"
+        PASS=$((PASS+1))
+    else
+        echo "⚠️  DEPENDENCY_MAP.md 可能过时，请更新"
+        PASS=$((PASS+1))
+    fi
+fi
+
 echo "================================"
 echo "检查结果: ✅ $PASS 通过 | ❌ $FAIL 失败"
 
