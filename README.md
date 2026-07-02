@@ -36,6 +36,11 @@ bash vibe-control/scripts/status.sh
 bash vibe-control/scripts/pr-check.sh
 ```
 
+### 异常恢复
+```bash
+bash vibe-control/scripts/recover.sh
+```
+
 ### 运行项目合规检查
 ```bash
 npm run vibe-check
@@ -79,6 +84,7 @@ bash vibe-control/scripts/task-log.sh "任务描述"
 | `scripts/task-log.sh` | 任务日志生成脚本，为每次编码任务创建跟踪记录 |
 | `scripts/status.sh` | 查看 vibe-control 状态：版本、模式、注入产物 |
 | `scripts/pr-check.sh` | PR 前完整检查，汇总任务日志摘要 + 合规状态 |
+| `scripts/recover.sh` | 诊断修复：检查 .vibe/ 钩子 gitignore 状态，输出修复命令 |
 | `scripts/update.sh` | 升级脚本，等同 sync-core.sh |
 
 ## 维护方式

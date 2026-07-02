@@ -78,6 +78,41 @@
 
 > AI 在修改出问题时，必须主动告知开发者具体的回滚命令，不得尝试"快速再改一次"来掩盖问题。
 
+## 异常处理
+
+当操作失败（非代码逻辑错误）时，按以下协议处理：
+
+### 推送失败
+
+1. **被拒绝（远程有新提交）**：`git pull --rebase` → 解决冲突 → `git push`
+2. **网络/权限错误**：检查网络连接和仓库权限，重试 `git push`
+3. **pre-push 钩子拦截**：查看检查输出 → 修复问题 → 重新 push
+
+### 拉取/合并冲突
+
+1. `git status` 查看冲突文件
+2. 手动解决冲突标记（`<<<<<<<` / `>>>>>>>`）
+3. `git add <冲突文件>` → `git rebase --continue`（或 `git merge --continue`）
+
+### 注入失败（inject.sh 中途退出）
+
+1. 运行 `bash vibe-control/scripts/recover.sh` 诊断
+2. 根据输出修复缺失项
+3. 或重新运行 `bash vibe-control/scripts/inject.sh` 完整注入
+
+### 钩子损坏
+
+1. 运行 `bash vibe-control/scripts/recover.sh` 诊断钩子状态
+2. 重新安装：`cp vibe-control/scripts/pre-commit .git/hooks/ && cp vibe-control/scripts/pre-push .git/hooks/`
+3. 确认权限：`chmod +x .git/hooks/pre-commit .git/hooks/pre-push`
+
+### 控制文件损坏（.vibe/ 被意外删除）
+
+1. 运行 `bash vibe-control/scripts/recover.sh` 诊断
+2. 恢复：`bash vibe-control/scripts/inject.sh`（不会覆盖已有 .gitignore 配置）
+
+> AI 遇到上述任何异常时，必须主动输出具体恢复命令，不得含糊说"出错了请手动处理"。
+
 ## 关联模块声明
 
 > 声明项目中存在强耦合关系的模块对，修改其中一方时必须联动检查另一方。

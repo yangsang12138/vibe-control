@@ -83,7 +83,9 @@ fi
 if [ -d ".git" ]; then
     cp "$VIBE_ROOT/scripts/pre-commit" .git/hooks/pre-commit
     chmod +x .git/hooks/pre-commit
-    echo "✅ pre-commit 钩子已安装"
+    cp "$VIBE_ROOT/scripts/pre-push" .git/hooks/pre-push
+    chmod +x .git/hooks/pre-push
+    echo "✅ pre-commit 和 pre-push 钩子已安装"
 fi
 
 # 5+6+9. 生成 opencode 配置

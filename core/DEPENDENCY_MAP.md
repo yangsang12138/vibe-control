@@ -31,10 +31,14 @@ graph TD
     subgraph 工具
         U[scripts/status.sh]
         V[scripts/pr-check.sh]
+        W[scripts/recover.sh]
+    end
+    subgraph 钩子
+        PRE[scripts/pre-commit]
+        PUSH[scripts/pre-push]
     end
     subgraph 验证
         L[scripts/check.sh]
-        M[scripts/pre-commit]
     end
     subgraph 输出
         N[.cursorrules]
@@ -62,7 +66,11 @@ graph TD
     H --> S
     T --> F
     T --> N
-    L --> M
+    L --> PRE
+    V --> L
+    PUSH --> V
+    H --> PRE
+    H --> PUSH
 ```
 
 ## 关键依赖矩阵
@@ -72,9 +80,11 @@ graph TD
 | `scripts/detect.sh` | fill-templates.sh, sync-templates.sh, inject.sh | 高 | detect.json 的 key 名与 fill-templates 的 PLACEHOLDER_MAP 必须同步 |
 | `scripts/fill-templates.sh` | sync-templates.sh, inject.sh | 高 | 占位符映射与 detect.json key 一致；输出路径与 opencode.json 中 instructions 一致 |
 | `scripts/inject.sh` | init.sh, sync-core.sh | 极高 | 每次修改 inject 行为后必须重新注入测试；.vibe/ 输出结构变化需同步 check.sh 和 .gitignore |
-| `scripts/check.sh` | pre-commit | 高 | check 项增减需对应更新 pre-commit 预期 |
+| `scripts/check.sh` | pre-commit, pre-push | 高 | check 项增减需对应更新 pre-commit 预期 |
 | `scripts/status.sh` | 无（叶子节点） | 低 | 只读工具，修改后运行一次确认输出正确 |
-| `scripts/pr-check.sh` | check.sh | 中 | 依赖 check.sh 返回值；日志摘要格式需与 task-log 模板一致 |
+| `scripts/pr-check.sh` | pre-push, check.sh | 中 | 依赖 check.sh 返回值；日志摘要格式需与 task-log 模板一致 |
+| `scripts/pre-push` | pr-check.sh | 中 | 依赖 pr-check.sh 返回值，失败阻止 git push |
+| `scripts/recover.sh` | inject.sh, check.sh | 低 | 检测 .vibe/ 结构、钩子、gitignore，输出修复命令 |
 | `scripts/task-log.sh` | check.sh, fill-templates.sh | 中 | 新 key 需同步 PLACEHOLDER_MAP；check.sh 中任务日志检查逻辑需同步格式 |
 | `.opencode/opencode.json` | opencode CLI | 高 | instructions 路径必须指向实际存在的文件（core/* 或 .vibe/core/*） |
 | `core/*.md` 模板 | fill-templates.sh | 中 | 模板中的占位符名与 detect.json 的 key 以及 PLACEHOLDER_MAP 三方一致 |
@@ -107,6 +117,14 @@ graph TD
 - [ ] scripts/pr-check.sh — check.sh 调用 + 日志解析 + 摘要格式
 - [ ] scripts/check.sh — 如 check 项变化，需确认 pr-check 仍正确捕获退出码
 - [ ] README.md — 文件说明表是否同步
+
+### 修改 pre-push
+- [ ] scripts/pre-push — pr-check.sh 调用路径检测
+- [ ] scripts/pr-check.sh — 确保依赖方返回值一致
+
+### 修改 recover.sh
+- [ ] scripts/recover.sh — 四大项检查覆盖
+- [ ] scripts/inject.sh — 检查结构变化需同步 recover.sh 检测逻辑
 
 ### 修改 inject.sh
 - [ ] scripts/inject.sh — 注入逻辑

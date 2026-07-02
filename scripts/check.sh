@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# 异常退出时输出诊断提示（非静默吞错）
+trap 'echo ""; echo "⚠️  check.sh 异常退出，建议运行: bash ${PREFIX}scripts/recover.sh"' ERR
+
 # vibe-control 合规检查脚本
 
 PASS=0

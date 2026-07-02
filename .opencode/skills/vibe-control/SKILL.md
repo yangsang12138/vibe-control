@@ -124,6 +124,19 @@ bash vibe-control/scripts/check.sh
 
 不可静默结束。用户可能忘记 commit，导致所有修改停留在工作区。
 
+### 提交后检查
+
+如果用户要求提交，提交完成后 **必须** 检查 `git push` 是否成功。若推送失败（被拒绝/网络错误/pre-push 拦截），输出：
+
+```bash
+# 诊断问题
+bash vibe-control/scripts/recover.sh
+
+# 常见恢复
+git pull --rebase          # 远程有新提交
+git push                   # 重试
+```
+
 ## 通用约束
 
 - 数据模型定义只能修改 `[类型定义文件]`，不得在其他文件重新定义类型
