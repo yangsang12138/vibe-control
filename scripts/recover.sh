@@ -72,19 +72,14 @@ echo ""
 # 4. 检查 .gitignore
 echo "▶ .gitignore 检查"
 if [ -f ".gitignore" ]; then
-    for entry in .vibe .cursorrules; do
-        if grep -q "^\.vibe$\|^\.cursorrules$" .gitignore 2>/dev/null; then
-            : # handled in loop
+    for entry in .vibe .cursorrules .opencode vibe-control; do
+        if grep -q "^${entry}$" .gitignore 2>/dev/null; then
+            echo "  ✅ $entry"
         else
-            if ! grep -q "^$entry$" .gitignore 2>/dev/null; then
-                echo "  ❌ $entry 未在 .gitignore 中"
-                ISSUES=$((ISSUES+1))
-            fi
+            echo "  ❌ $entry 未在 .gitignore 中"
+            ISSUES=$((ISSUES+1))
         fi
     done
-    if [ $ISSUES -eq 0 ] || [ "$(echo "$ISSUES" | tail -1)" = "$ISSUES" ]; then
-        echo "  ✅ .vibe 和 .cursorrules 已忽略"
-    fi
 fi
 
 echo ""

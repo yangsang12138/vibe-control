@@ -2,7 +2,7 @@
 set -e
 
 # vibe-control 核心文件同步脚本
-# 更新子模块 → 刷新软链 → 重新注入
+# 拉取最新代码 → 重新注入
 
 echo "🔄 正在同步 vibe-control 核心文件..."
 echo "================================"
@@ -14,43 +14,39 @@ if [ ! -f "$VIBE_ROOT/scripts/check.sh" ]; then
     exit 1
 fi
 
-# 更新子模块
-if [ -d ".git/modules/vibe-control" ] || [ -f ".gitmodules" ]; then
-    echo "更新子模块..."
-    if git submodule update --remote vibe-control; then
-        echo "✅ 子模块已更新到最新"
+# 更新 vibe-control
+if [ -d "$VIBE_ROOT/.git" ]; then
+    echo "更新 vibe-control..."
+    if git -C "$VIBE_ROOT" pull; then
+        echo "✅ vibe-control 已更新到最新"
     else
         echo "⚠️  当前协议连接失败，尝试备选协议..."
-        CURRENT_URL=$(git config --file .gitmodules submodule.vibe-control.url 2>/dev/null)
+        CURRENT_URL=$(git -C "$VIBE_ROOT" remote get-url origin 2>/dev/null)
         case "$CURRENT_URL" in
             git@github.com:*)
                 echo "   SSH → HTTPS 回退..."
-                git config --file .gitmodules submodule.vibe-control.url \
+                git -C "$VIBE_ROOT" remote set-url origin \
                     "$(echo "$CURRENT_URL" | sed 's|git@github.com:|https://github.com/|')"
-                git submodule sync --quiet
-                if git submodule update --remote vibe-control; then
+                if git -C "$VIBE_ROOT" pull; then
                     echo "✅ HTTPS 连接成功（已从 SSH 自动切换）"
                 else
                     echo "❌ HTTPS 也连接失败，请检查网络"
-                    git config --file .gitmodules submodule.vibe-control.url "$CURRENT_URL"
-                    git submodule sync --quiet
+                    git -C "$VIBE_ROOT" remote set-url origin "$CURRENT_URL"
                 fi
                 ;;
             https://github.com/*)
                 echo "   HTTPS → SSH 回退..."
-                git config --file .gitmodules submodule.vibe-control.url \
+                git -C "$VIBE_ROOT" remote set-url origin \
                     "$(echo "$CURRENT_URL" | sed 's|https://github.com/|git@github.com:|')"
-                git submodule sync --quiet
-                if git submodule update --remote vibe-control; then
+                if git -C "$VIBE_ROOT" pull; then
                     echo "✅ SSH 连接成功（已从 HTTPS 自动切换）"
                 else
                     echo "❌ SSH 也连接失败，请检查网络"
-                    git config --file .gitmodules submodule.vibe-control.url "$CURRENT_URL"
-                    git submodule sync --quiet
+                    git -C "$VIBE_ROOT" remote set-url origin "$CURRENT_URL"
                 fi
                 ;;
             *)
-                echo "❌ 无法识别子模块 URL 协议，请检查 .gitmodules"
+                echo "❌ 无法识别 URL 协议，请检查"
                 ;;
         esac
     fi

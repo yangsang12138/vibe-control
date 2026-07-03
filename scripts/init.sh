@@ -14,14 +14,14 @@ cd "$TARGET_DIR"
 
 # 判断是否已在 vibe-control 自身仓库
 if [ -f "core/AI_CONTROL.md" ]; then
-    echo "⏭️  检测到 vibe-control 自身仓库，跳过子模块添加"
+    echo "⏭️  检测到 vibe-control 自身仓库，跳过克隆"
     VIBE_ROOT="$(pwd)"
 else
     if [ -d "vibe-control/.git" ]; then
-        echo "⏭️  vibe-control 子模块已存在"
+        echo "⏭️  vibe-control 已存在"
     else
-        echo "添加子模块..."
-        git submodule add "$REPO_URL" vibe-control
+        echo "克隆 vibe-control..."
+        git clone "$REPO_URL" vibe-control
     fi
     VIBE_ROOT="$(pwd)/vibe-control"
 fi

@@ -9,26 +9,21 @@ if [ ! -f "vibe-control/core/AI_CONTROL.md" ]; then
     exit 1
 fi
 
-IS_SUBMODULE=false
-if git submodule status vibe-control >/dev/null 2>&1; then
-    IS_SUBMODULE=true
-    echo "模式: 注入模式（子模块）"
-else
-    echo "模式: 自托管"
-fi
-
-PREFIX="vibe-control/"
 VIBE_DIR="vibe-control"
+
+# 模式
+if [ -f "core/AI_CONTROL.md" ]; then
+    echo "模式: 自托管"
+else
+    echo "模式: 注入模式"
+fi
 
 # 版本信息
 if [ -d "$VIBE_DIR/.git" ]; then
-    TAG=$(cd "$VIBE_DIR" && git describe --tags --always 2>/dev/null || echo "unk")
+    TAG=$(cd "$VIBE_DIR" && git describe --tags --always 2>/dev/null || echo "unknown")
     echo "版本: $TAG"
-fi
-
-# 子模块信息
-if $IS_SUBMODULE; then
-    echo "子模块: $(git submodule status vibe-control 2>/dev/null | sed 's/^ //' | awk '{print $1}')"
+    CURRENT=$(cd "$VIBE_DIR" && git log --oneline -1 --format="%h %s" 2>/dev/null || echo "unknown")
+    echo "最新提交: $CURRENT"
 fi
 
 echo "------------------------"
@@ -60,18 +55,6 @@ for item in .cursorrules .opencode/opencode.json .git/hooks/pre-commit; do
         echo "  ✅ $item"
     fi
 done
-
-# package.json 脚本
-if [ -f "package.json" ]; then
-    HAS_CHECK=$(node -e "try{const p=require('./package.json');console.log(p.scripts&&p.scripts['vibe-check']?'yes':'')}catch(e){}" 2>/dev/null)
-    HAS_UPDATE=$(node -e "try{const p=require('./package.json');console.log(p.scripts&&p.scripts['vibe-update']?'yes':'')}catch(e){}" 2>/dev/null)
-    if [ "$HAS_CHECK" = "yes" ]; then
-        echo "  npm run vibe-check   → bash vibe-control/scripts/check.sh"
-    fi
-    if [ "$HAS_UPDATE" = "yes" ]; then
-        echo "  npm run vibe-update  → bash vibe-control/scripts/update.sh"
-    fi
-fi
 
 echo "========================"
 echo "运行合规检查: bash vibe-control/scripts/check.sh"

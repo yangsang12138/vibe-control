@@ -60,7 +60,7 @@ echo "✅ $VIBE_OUT/README.md 已生成"
 
 # 4. 加入 .gitignore
 if [ -f ".gitignore" ]; then
-    for entry in .vibe .cursorrules .opencode; do
+    for entry in .vibe .cursorrules .opencode vibe-control; do
         if ! grep -q "^${entry}$" .gitignore 2>/dev/null; then
             echo "$entry" >> .gitignore
             echo "✅ .gitignore 已添加 $entry"
