@@ -7,12 +7,9 @@ set -e
 echo "🔄 正在同步 vibe-control 核心文件..."
 echo "================================"
 
-# 定位 vibe-control 根目录
-if [ -f "vibe-control/scripts/check.sh" ]; then
-    VIBE_ROOT="$(pwd)/vibe-control"
-elif [ -f "scripts/check.sh" ]; then
-    VIBE_ROOT="$(pwd)"
-else
+VIBE_ROOT="$(pwd)/vibe-control"
+
+if [ ! -f "$VIBE_ROOT/scripts/check.sh" ]; then
     echo "❌ 未找到 vibe-control，请在项目根目录执行"
     exit 1
 fi

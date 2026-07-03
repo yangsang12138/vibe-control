@@ -11,11 +11,6 @@ DATE=$(date +%Y%m%d-%H%M)
 SAFE_DESC=$(echo "$DESCRIPTION" | sed 's/[^a-zA-Z0-9]/-/g' | sed 's/--*/-/g' | sed 's/^-//;s/-$//')
 FILENAME="${DATE}-${SAFE_DESC}.md"
 
-PREFIX=""
-if [ -f "vibe-control/scripts/task-log.sh" ]; then
-    PREFIX="vibe-control/"
-fi
-
 TASK_DIR=".vibe/tasks"
 mkdir -p "$TASK_DIR"
 FILEPATH="$TASK_DIR/$FILENAME"
@@ -24,7 +19,7 @@ cat > "$FILEPATH" << FILEEOF
 # 任务日志: ${DESCRIPTION}
 
 > 生成时间: $(date '+%Y-%m-%d %H:%M')
-> 任务模板路径: ${PREFIX}core/TASK_TEMPLATE.md
+> 任务模板路径: vibe-control/core/TASK_TEMPLATE.md
 
 ---
 

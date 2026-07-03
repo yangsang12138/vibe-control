@@ -6,21 +6,14 @@ echo "========================"
 
 ISSUES=0
 
-# 检测脚本路径
-if [ -f "vibe-control/scripts/inject.sh" ]; then
-    INJECT="vibe-control/scripts/inject.sh"
-    CHECK="vibe-control/scripts/check.sh"
-    MODE="注入模式"
-elif [ -f "scripts/inject.sh" ]; then
-    INJECT="scripts/inject.sh"
-    CHECK="scripts/check.sh"
-    MODE="自托管"
-else
+INJECT="vibe-control/scripts/inject.sh"
+CHECK="vibe-control/scripts/check.sh"
+
+if [ ! -f "$INJECT" ]; then
     echo "❌ 未找到 vibe-control，请确认在项目根目录执行"
     exit 1
 fi
 
-echo "模式: $MODE"
 echo ""
 
 # 1. 检查 .vibe/ 目录
@@ -55,11 +48,7 @@ for hook in pre-commit pre-push; do
         echo "  ✅ $hook"
     else
         echo "  ❌ $hook 缺失"
-        if [ -f "vibe-control/scripts/$hook" ]; then
-            echo "  → 修复: cp vibe-control/scripts/$hook $HOOK_DIR/$hook && chmod +x $HOOK_DIR/$hook"
-        elif [ -f "scripts/$hook" ]; then
-            echo "  → 修复: cp scripts/$hook $HOOK_DIR/$hook && chmod +x $HOOK_DIR/$hook"
-        fi
+        echo "  → 修复: cp vibe-control/scripts/$hook $HOOK_DIR/$hook && chmod +x $HOOK_DIR/$hook"
         ISSUES=$((ISSUES+1))
     fi
 done

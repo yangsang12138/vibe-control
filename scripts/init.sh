@@ -2,11 +2,7 @@
 set -e
 
 # vibe-control 一键初始化脚本
-# 可直接通过 curl 管道执行：
-#   bash <(curl -fsSL https://raw.githubusercontent.com/yangsang12138/vibe-control/main/scripts/init.sh)
-#
-# 或在已添加子模块的项目中执行：
-#   bash vibe-control/scripts/init.sh
+# 用法：bash vibe-control/scripts/init.sh [项目根目录]
 
 REPO_URL="${REPO_URL:-https://github.com/yangsang12138/vibe-control.git}"
 TARGET_DIR="${1:-.}"
@@ -16,8 +12,8 @@ echo "================================"
 
 cd "$TARGET_DIR"
 
-# 判断是否已在 vibe-control 自身仓库内
-if [ -f "core/AI_CONTROL.md" ] && [ ! -d "vibe-control" ]; then
+# 判断是否已在 vibe-control 自身仓库
+if [ -f "core/AI_CONTROL.md" ]; then
     echo "⏭️  检测到 vibe-control 自身仓库，跳过子模块添加"
     VIBE_ROOT="$(pwd)"
 else
@@ -36,4 +32,4 @@ bash "$VIBE_ROOT/scripts/inject.sh"
 echo "================================"
 echo "🎉 初始化完成！"
 echo ""
-echo "下一步：编辑 AI_CONTROL.md 替换 {{占位符}} 为项目实际值"
+echo "下一步：编辑 .vibe/core/AI_CONTROL.md 替换 {{占位符}} 为项目实际值"

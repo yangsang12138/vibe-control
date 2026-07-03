@@ -4,10 +4,4 @@
 
 echo "🔍 运行 vibe-control 预提交检查..."
 
-if [ -f "vibe-control/scripts/check.sh" ]; then
-    bash vibe-control/scripts/check.sh
-elif [ -f "scripts/check.sh" ]; then
-    bash scripts/check.sh
-else
-    echo "⚠️  未找到 check.sh，跳过预提交检查"
-fi
+bash vibe-control/scripts/check.sh

@@ -2,7 +2,7 @@
 set -e
 
 # 异常退出时输出诊断提示（非静默吞错）
-trap 'echo ""; echo "⚠️  check.sh 异常退出，建议运行: bash ${PREFIX}scripts/recover.sh"' ERR
+trap 'echo ""; echo "⚠️  check.sh 异常退出，建议运行: bash vibe-control/scripts/recover.sh"' ERR
 
 # vibe-control 合规检查脚本
 
@@ -81,12 +81,7 @@ if [ $HAS_SECRET -eq 0 ]; then
 else
     FAIL=$((FAIL+1))
 fi
-# 自动检测：在 vibe-control 自身仓库还是被注入项目
-if [ -f "core/AI_CONTROL.md" ] && [ ! -d "vibe-control" ]; then
-    PREFIX=""
-else
-    PREFIX="vibe-control/"
-fi
+PREFIX="vibe-control/"
 
 echo "检查控制文件完整性..."
 for file in "core/AI_CONTROL.md" "core/DEPENDENCY_MAP.md" "core/TASK_TEMPLATE.md" "rules/.cursorrules"; do
@@ -109,23 +104,13 @@ else
 fi
 
 # 检查 DEPENDENCY_MAP 是否过时（仅限 vibe-control 自身仓库）
-if [ "$PREFIX" = "" ] && [ -d "scripts" ]; then
+if [ -f "core/AI_CONTROL.md" ] && [ -d "scripts" ]; then
     echo "检查 DEPENDENCY_MAP 是否过时..."
-    DEPRECATED=0
-    for script in scripts/*.sh; do
-        name=$(basename "$script")
-        if [ -f "$script" ]; then
-            if ! grep -q "$name" core/DEPENDENCY_MAP.md 2>/dev/null; then
-                echo "⚠️  $name 未在 DEPENDENCY_MAP.md 中记录"
-                DEPRECATED=1
-            fi
-        fi
-    done
-    if [ $DEPRECATED -eq 0 ]; then
+    if bash "${PREFIX}scripts/generate-depmap.sh" --check > /dev/null 2>&1; then
         echo "✅ DEPENDENCY_MAP.md 与 scripts/ 结构一致"
         PASS=$((PASS+1))
     else
-        echo "⚠️  DEPENDENCY_MAP.md 可能过时，请更新"
+        echo "⚠️  DEPENDENCY_MAP.md 可能过时，请运行 bash vibe-control/scripts/generate-depmap.sh 更新"
         PASS=$((PASS+1))
     fi
 
@@ -147,6 +132,35 @@ if [ "$PREFIX" = "" ] && [ -d "scripts" ]; then
     else
         echo "⚠️  README.md 可能过时，请更新文件说明表"
         PASS=$((PASS+1))
+    fi
+
+    # 零泄漏自检：验证 inject.sh 产物均在 .gitignore 中
+    echo "检查 inject.sh 产物零泄漏..."
+    INJECT_FILE="scripts/inject.sh"
+    GITIGNORE_FILE=".gitignore"
+    LEAK=0
+    if [ -f "$INJECT_FILE" ] && [ -f "$GITIGNORE_FILE" ]; then
+        # 从 inject.sh 提取所有 > "path" 输出路径
+        # 格式: cat > "$VIBE_OUT/..." 或 cat > ".opencode/..."
+        OUTPUTS=$(grep -oE '>[[:space:]]*"?(\$[A-Z_]+/)?(\.[a-z][a-zA-Z0-9_./-]*)"?' "$INJECT_FILE" 2>/dev/null | \
+            sed 's/^>[[:space:]]*"//' | sed 's/"$//' | \
+            sed 's/\$VIBE_OUT\//.vibe\//g' | \
+            grep '^\.' | grep -v '\.gitignore' | grep -v '\.git/hooks' | sort -u)
+        for f in $OUTPUTS; do
+            # 取顶级目录名，检查是否在 .gitignore 中
+            TOP_DIR="${f%%/*}"
+            if ! grep -q "^${TOP_DIR}$" "$GITIGNORE_FILE" 2>/dev/null; then
+                echo "❌ 泄漏风险: $f 由 inject.sh 生成但 $TOP_DIR/ 未在 .gitignore 中"
+                LEAK=1
+            fi
+        done
+    fi
+    if [ $LEAK -eq 0 ]; then
+        echo "✅ 注入产物已全部 .gitignore 覆盖"
+        PASS=$((PASS+1))
+    else
+        echo "   请在 .gitignore 中添加对应目录"
+        FAIL=$((FAIL+1))
     fi
 fi
 
@@ -228,6 +242,20 @@ fi
 
 echo "================================"
 echo "检查结果: ✅ $PASS 通过 | ❌ $FAIL 失败"
+
+# 未提交修改提示（防止 AI 跳过提交确认步骤）
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    DIRTY=0
+    git diff --quiet 2>/dev/null || DIRTY=1
+    git diff --cached --quiet 2>/dev/null || DIRTY=1
+    [ -n "$(git ls-files --others --exclude-standard 2>/dev/null)" ] && DIRTY=1
+    if [ $DIRTY -eq 1 ]; then
+        echo ""
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "⏎  请确认是否提交"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    fi
+fi
 
 if [ $FAIL -gt 0 ]; then
     exit 1

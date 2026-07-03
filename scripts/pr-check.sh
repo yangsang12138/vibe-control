@@ -4,13 +4,10 @@ set -e
 echo "🚦 vibe-control PR 检查"
 echo "========================"
 
-# 自动检测路径
-if [ -f "vibe-control/scripts/check.sh" ]; then
-    CHECK="vibe-control/scripts/check.sh"
-elif [ -f "scripts/check.sh" ]; then
-    CHECK="scripts/check.sh"
-else
-    echo "❌ 未找到 check.sh"
+CHECK="vibe-control/scripts/check.sh"
+
+if [ ! -f "$CHECK" ]; then
+    echo "❌ 未找到 vibe-control"
     exit 1
 fi
 

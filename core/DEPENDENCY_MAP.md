@@ -4,136 +4,150 @@
 >
 > **使用方法**：接入项目后，根据实际项目结构填写下方各节内容。
 
+<!-- DEPGRAPH_START -->
+<!-- 由 generate-depmap.sh 自动生成，请勿手动编辑 -->
+
 ## 依赖关系图
 
 ```mermaid
 graph TD
-    subgraph 上游模板
-        A[core/AI_CONTROL.md]
-        B[core/DEPENDENCY_MAP.md]
-        C[core/TASK_TEMPLATE.md]
-        D[rules/.cursorrules]
-    end
-    subgraph 检测填充
-        E[scripts/detect.sh]
-        F[scripts/fill-templates.sh]
-        G[.vibe/detect.json]
-    end
-    subgraph 注入
-        H[scripts/inject.sh]
-        I[scripts/init.sh]
-        J[scripts/sync-core.sh]
-        K[scripts/update.sh]
-    end
-    subgraph 跟踪
-        T[scripts/task-log.sh]
-    end
-    subgraph 工具
-        U[scripts/status.sh]
-        V[scripts/pr-check.sh]
-        W[scripts/recover.sh]
-    end
-    subgraph 钩子
-        PRE[scripts/pre-commit]
-        PUSH[scripts/pre-push]
-    end
-    subgraph 验证
-        L[scripts/check.sh]
-    end
-    subgraph 输出
-        N[.cursorrules]
-        O[.vibe/core/AI_CONTROL.md]
-        P[.vibe/core/DEPENDENCY_MAP.md]
-        Q[.vibe/core/TASK_TEMPLATE.md]
-        R[.vibe/README.md]
-        S[.opencode/opencode.json]
+
+    subgraph 脚本
+    s_pre-commit[pre-commit]
+    s_pre-push[pre-push]
+    s_check_sh[check.sh]
+    s_detect_sh[detect.sh]
+    s_fill-templates_sh[fill-templates.sh]
+    s_generate-depmap_sh[generate-depmap.sh]
+    s_init_sh[init.sh]
+    s_inject_sh[inject.sh]
+    s_pr-check_sh[pr-check.sh]
+    s_recover_sh[recover.sh]
+    s_status_sh[status.sh]
+    s_sync-core_sh[sync-core.sh]
+    s_sync-templates_sh[sync-templates.sh]
+    s_task-log_sh[task-log.sh]
+    s_update_sh[update.sh]
     end
 
-    I --> H
-    J --> H
-    K --> J
-    H --> E
-    E --> G
-    G --> F
-    A --> F
-    B --> F
-    C --> F
-    F --> O
-    F --> P
-    F --> Q
-    H --> N
-    H --> R
-    H --> S
-    T --> F
-    T --> N
-    L --> PRE
-    V --> L
-    PUSH --> V
-    H --> PRE
-    H --> PUSH
+    subgraph 文件与配置
+    _cursorrules[.cursorrules]
+    _git_hooks_pre-commit[.git/hooks/pre-commit]
+    _git_hooks_pre-push[.git/hooks/pre-push]
+    _gitignore[.gitignore]
+    _opencode_opencode_json[.opencode/opencode.json]
+    _vibe_core_[.vibe/core/]
+    _vibe_core_*_md[.vibe/core/*.md]
+    _vibe_tasks_*_md[.vibe/tasks/*.md]
+    _vibe_tasks_YYYYMMDD[.vibe/tasks/YYYYMMDD]
+    core_AI_CONTROL_md[core/AI_CONTROL.md]
+    vibe-control[vibe-control]
+    end
+
+    s_SKILL.md --> s_check.sh
+    s_SKILL.md --> s_recover.sh
+    s_SKILL.md --> s_sync-templates.sh
+    s_SKILL.md --> s_task-log.sh
+    s_pre-commit --> s_check.sh
+    s_pre-push --> s_pr-check.sh
+    s_check.sh --> s_recover.sh
+    s_init.sh --> s_inject.sh
+    s_inject.sh --> s_sync-templates.sh
+    s_sync-core.sh --> s_inject.sh
+    s_sync-templates.sh --> s_detect.sh
+    s_sync-templates.sh --> s_fill-templates.sh
+    s_sync-templates.sh --> s_generate-depmap.sh
+    s_inject.sh -->|写入| _gitignore
+    s_inject.sh -->|写入| _opencode_opencode_json
+    s_inject.sh -.->|安装| _cursorrules
+    s_inject.sh -.->|安装| _git_hooks_pre-commit
+    s_inject.sh -.->|安装| _git_hooks_pre-push
+    s_inject.sh -.->|安装| vibe-control
 ```
 
 ## 关键依赖矩阵
 
 | 被依赖方（修改它会影响） | 依赖方列表 | 影响程度 | 检查要点 |
 |---|---|---|---|
-| `scripts/detect.sh` | fill-templates.sh, sync-templates.sh, inject.sh | 高 | detect.json 的 key 名与 fill-templates 的 PLACEHOLDER_MAP 必须同步 |
-| `scripts/fill-templates.sh` | sync-templates.sh, inject.sh | 高 | 占位符映射与 detect.json key 一致；输出路径与 opencode.json 中 instructions 一致 |
-| `scripts/inject.sh` | init.sh, sync-core.sh | 极高 | 每次修改 inject 行为后必须重新注入测试；.vibe/ 输出结构变化需同步 check.sh 和 .gitignore |
-| `scripts/check.sh` | pre-commit, pre-push | 高 | check 项增减需对应更新 pre-commit 预期 |
-| `scripts/status.sh` | 无（叶子节点） | 低 | 只读工具，修改后运行一次确认输出正确 |
-| `scripts/pr-check.sh` | pre-push, check.sh | 中 | 依赖 check.sh 返回值；日志摘要格式需与 task-log 模板一致 |
-| `scripts/pre-push` | pr-check.sh | 中 | 依赖 pr-check.sh 返回值，失败阻止 git push |
-| `scripts/recover.sh` | inject.sh, check.sh | 低 | 检测 .vibe/ 结构、钩子、gitignore，输出修复命令 |
-| `scripts/task-log.sh` | check.sh, fill-templates.sh | 中 | 新 key 需同步 PLACEHOLDER_MAP；check.sh 中任务日志检查逻辑需同步格式 |
-| `.opencode/opencode.json` | opencode CLI | 高 | instructions 路径必须指向实际存在的文件（core/* 或 .vibe/core/*） |
-| `core/*.md` 模板 | fill-templates.sh | 中 | 模板中的占位符名与 detect.json 的 key 以及 PLACEHOLDER_MAP 三方一致 |
+| `pre-commit` | - | 低 | 叶子节点，影响范围有限 |
+| `pre-push` | - | 低 | 叶子节点，影响范围有限 |
+| `check.sh` | SKILL.md, pre-commit | 中 | 调用方返回值或接口需同步 |
+| `detect.sh` | sync-templates.sh | 中 | 调用方返回值或接口需同步 |
+| `fill-templates.sh` | sync-templates.sh | 中 | 调用方返回值或接口需同步 |
+| `generate-depmap.sh` | sync-templates.sh | 中 | 调用方返回值或接口需同步 |
+| `init.sh` | - | 低 | 叶子节点，影响范围有限 |
+| `inject.sh` | init.sh, sync-core.sh | 中 | 调用方返回值或接口需同步 |
+| `pr-check.sh` | pre-push | 中 | 调用方返回值或接口需同步 |
+| `recover.sh` | SKILL.md, check.sh | 中 | 调用方返回值或接口需同步 |
+| `status.sh` | - | 低 | 叶子节点，影响范围有限 |
+| `sync-core.sh` | - | 低 | 叶子节点，影响范围有限 |
+| `sync-templates.sh` | SKILL.md, inject.sh | 中 | 调用方返回值或接口需同步 |
+| `task-log.sh` | SKILL.md | 中 | 调用方返回值或接口需同步 |
+| `update.sh` | - | 低 | 叶子节点，影响范围有限 |
 
 ## 修改检查清单
 
-### 修改 detect.sh
-- [ ] scripts/detect.sh — 检测逻辑本身
-- [ ] scripts/fill-templates.sh — PLACEHOLDER_MAP 是否需同步新 key
-- [ ] .vibe/detect.json — 测试检测输出格式
-
-### 修改 fill-templates.sh
-- [ ] scripts/fill-templates.sh — 替换逻辑
-- [ ] scripts/detect.sh — 确保 detect.json 输出对应 key
-- [ ] .vibe/core/* — 测试填充结果
-- [ ] 各 core/*.md 模板 — 检查占位符是否被正确映射
-
-### 修改 task-log.sh
-- [ ] scripts/task-log.sh — 日志模板格式
-- [ ] scripts/check.sh — 任务日志检查逻辑
-- [ ] SKILL.md — 工作流中引用的 task-log 路径
-- [ ] .vibe/tasks/ — 测试日志生成结果
-
-### 修改 status.sh
-- [ ] scripts/status.sh — 输出内容和格式
-- [ ] README.md — 文件说明表是否同步
-- [ ] 两种模式（自托管 / 注入）分别测试
-
-### 修改 pr-check.sh
-- [ ] scripts/pr-check.sh — check.sh 调用 + 日志解析 + 摘要格式
-- [ ] scripts/check.sh — 如 check 项变化，需确认 pr-check 仍正确捕获退出码
-- [ ] README.md — 文件说明表是否同步
+### 修改 pre-commit
+- [ ] pre-commit — 修改本身
 
 ### 修改 pre-push
-- [ ] scripts/pre-push — pr-check.sh 调用路径检测
-- [ ] scripts/pr-check.sh — 确保依赖方返回值一致
+- [ ] pre-push — 修改本身
 
-### 修改 recover.sh
-- [ ] scripts/recover.sh — 四大项检查覆盖
-- [ ] scripts/inject.sh — 检查结构变化需同步 recover.sh 检测逻辑
+### 修改 scripts/check.sh
+- [ ] scripts/check.sh — 修改本身
+- [ ] SKILL.md — 工作流中引用需同步
+- [ ] pre-commit — 调用方返回值或接口需同步
 
-### 修改 inject.sh
-- [ ] scripts/inject.sh — 注入逻辑
-- [ ] scripts/check.sh — 检查项是否需同步
-- [ ] .gitignore — .vibe/ 忽略规则
-- [ ] 自托管：重跑 inject.sh 验证
+### 修改 scripts/detect.sh
+- [ ] scripts/detect.sh — 修改本身
+- [ ] sync-templates.sh — 调用方返回值或接口需同步
 
-### 新增脚本
-- [ ] 在依赖关系图中增加节点和连线
-- [ ] 在依赖矩阵中增加新行的上下游关系
-- [ ] 检查是否有调用链上游需要同步（如 inject.sh 检测并调 sync-templates.sh）
-- [ ] 更新 .vibe/core/DEPENDENCY_MAP.md（跑 sync-templates.sh）
+### 修改 scripts/fill-templates.sh
+- [ ] scripts/fill-templates.sh — 修改本身
+- [ ] sync-templates.sh — 调用方返回值或接口需同步
+
+### 修改 scripts/generate-depmap.sh
+- [ ] scripts/generate-depmap.sh — 修改本身
+- [ ] sync-templates.sh — 调用方返回值或接口需同步
+
+### 修改 scripts/init.sh
+- [ ] scripts/init.sh — 修改本身
+
+### 修改 scripts/inject.sh
+- [ ] scripts/inject.sh — 修改本身
+- [ ] init.sh — 调用方返回值或接口需同步
+- [ ] sync-core.sh — 调用方返回值或接口需同步
+- [ ] .gitignore — 输出内容或格式需同步
+- [ ] .opencode/opencode.json — 输出内容或格式需同步
+- [ ] .cursorrules — 安装逻辑需同步
+- [ ] .git/hooks/pre-commit — 安装逻辑需同步
+- [ ] .git/hooks/pre-push — 安装逻辑需同步
+- [ ] vibe-control — 安装逻辑需同步
+
+### 修改 scripts/pr-check.sh
+- [ ] scripts/pr-check.sh — 修改本身
+- [ ] pre-push — 调用方返回值或接口需同步
+
+### 修改 scripts/recover.sh
+- [ ] scripts/recover.sh — 修改本身
+- [ ] SKILL.md — 工作流中引用需同步
+- [ ] check.sh — 调用方返回值或接口需同步
+
+### 修改 scripts/status.sh
+- [ ] scripts/status.sh — 修改本身
+
+### 修改 scripts/sync-core.sh
+- [ ] scripts/sync-core.sh — 修改本身
+
+### 修改 scripts/sync-templates.sh
+- [ ] scripts/sync-templates.sh — 修改本身
+- [ ] SKILL.md — 工作流中引用需同步
+- [ ] inject.sh — 调用方返回值或接口需同步
+
+### 修改 scripts/task-log.sh
+- [ ] scripts/task-log.sh — 修改本身
+- [ ] SKILL.md — 工作流中引用需同步
+
+### 修改 scripts/update.sh
+- [ ] scripts/update.sh — 修改本身
+<!-- DEPGRAPH_END -->

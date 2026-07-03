@@ -4,20 +4,21 @@
 echo "📊 vibe-control 状态"
 echo "========================"
 
-# 检测模式
-if [ -f "vibe-control/core/AI_CONTROL.md" ]; then
-    MODE="注入模式（子模块）"
-    PREFIX="vibe-control/"
-    VIBE_DIR="vibe-control"
-elif [ -f "core/AI_CONTROL.md" ]; then
-    MODE="自托管"
-    PREFIX=""
-    VIBE_DIR="."
-else
+if [ ! -f "vibe-control/core/AI_CONTROL.md" ]; then
     echo "❌ 未检测到 vibe-control"
     exit 1
 fi
-echo "模式: $MODE"
+
+IS_SUBMODULE=false
+if git submodule status vibe-control >/dev/null 2>&1; then
+    IS_SUBMODULE=true
+    echo "模式: 注入模式（子模块）"
+else
+    echo "模式: 自托管"
+fi
+
+PREFIX="vibe-control/"
+VIBE_DIR="vibe-control"
 
 # 版本信息
 if [ -d "$VIBE_DIR/.git" ]; then
@@ -26,10 +27,8 @@ if [ -d "$VIBE_DIR/.git" ]; then
 fi
 
 # 子模块信息
-if [ "$MODE" = "注入模式（子模块）" ]; then
-    if git submodule status vibe-control >/dev/null 2>&1; then
-        echo "子模块: $(git submodule status vibe-control 2>/dev/null | sed 's/^ //' | awk '{print $1}')"
-    fi
+if $IS_SUBMODULE; then
+    echo "子模块: $(git submodule status vibe-control 2>/dev/null | sed 's/^ //' | awk '{print $1}')"
 fi
 
 echo "------------------------"
@@ -75,4 +74,4 @@ if [ -f "package.json" ]; then
 fi
 
 echo "========================"
-echo "运行合规检查: bash ${PREFIX}scripts/check.sh"
+echo "运行合规检查: bash vibe-control/scripts/check.sh"

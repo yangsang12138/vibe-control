@@ -37,13 +37,13 @@ fi
 
 # 从 pyproject.toml 获取项目名
 if [ -f "pyproject.toml" ]; then
-    NAME=$(grep '^name\s*=' pyproject.toml 2>/dev/null | sed 's/.*=\s*"\(.*\)"/\1/' | tr -d ' ')
+    NAME=$(grep '^name[[:space:]]*=' pyproject.toml 2>/dev/null | sed 's/.*=[[:space:]]*"\(.*\)"/\1/' | tr -d ' ')
     [ -z "$PROJECT_NAME" ] && [ -n "$NAME" ] && PROJECT_NAME="$NAME"
 fi
 
 # 从 Cargo.toml 获取项目名
 if [ -f "Cargo.toml" ]; then
-    NAME=$(grep '^name\s*=' Cargo.toml 2>/dev/null | sed 's/.*=\s*"\(.*\)"/\1/' | tr -d ' ')
+    NAME=$(grep '^name[[:space:]]*=' Cargo.toml 2>/dev/null | sed 's/.*=[[:space:]]*"\(.*\)"/\1/' | tr -d ' ')
     [ -z "$PROJECT_NAME" ] && [ -n "$NAME" ] && PROJECT_NAME="$NAME"
 fi
 
@@ -66,11 +66,12 @@ elif [ -f "vite.config.ts" ] || [ -f "vite.config.js" ]; then
     PROJECT_TYPE="Frontend App (Vite)"
 elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
     PROJECT_TYPE="Python Application"
-elif ls *.rs 2>/dev/null | grep -q .; then
-    PROJECT_TYPE="Rust Application"
-else
-    PROJECT_TYPE="Unknown"
+elif [ -d "scripts" ]; then
+    SH_COUNT=$(ls scripts/*.sh 2>/dev/null | wc -l | tr -d ' ')
+    [ "$SH_COUNT" -ge 3 ] 2>/dev/null && PROJECT_TYPE="Bash Tool"
 fi
+
+[ -z "$PROJECT_TYPE" ] && PROJECT_TYPE="Unknown"
 
 # --- 工具链检测 ---
 TYPE_CHECK_COMMAND=""
