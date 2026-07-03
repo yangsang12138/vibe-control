@@ -14,42 +14,19 @@ if [ ! -f "$VIBE_ROOT/scripts/check.sh" ]; then
     exit 1
 fi
 
-# 更新 vibe-control
-if [ -d "$VIBE_ROOT/.git" ]; then
-    echo "更新 vibe-control..."
-    if git -C "$VIBE_ROOT" pull; then
-        echo "✅ vibe-control 已更新到最新"
-    else
-        echo "⚠️  当前协议连接失败，尝试备选协议..."
-        CURRENT_URL=$(git -C "$VIBE_ROOT" remote get-url origin 2>/dev/null)
-        case "$CURRENT_URL" in
-            git@github.com:*)
-                echo "   SSH → HTTPS 回退..."
-                git -C "$VIBE_ROOT" remote set-url origin \
-                    "$(echo "$CURRENT_URL" | sed 's|git@github.com:|https://github.com/|')"
-                if git -C "$VIBE_ROOT" pull; then
-                    echo "✅ HTTPS 连接成功（已从 SSH 自动切换）"
-                else
-                    echo "❌ HTTPS 也连接失败，请检查网络"
-                    git -C "$VIBE_ROOT" remote set-url origin "$CURRENT_URL"
-                fi
-                ;;
-            https://github.com/*)
-                echo "   HTTPS → SSH 回退..."
-                git -C "$VIBE_ROOT" remote set-url origin \
-                    "$(echo "$CURRENT_URL" | sed 's|https://github.com/|git@github.com:|')"
-                if git -C "$VIBE_ROOT" pull; then
-                    echo "✅ SSH 连接成功（已从 HTTPS 自动切换）"
-                else
-                    echo "❌ SSH 也连接失败，请检查网络"
-                    git -C "$VIBE_ROOT" remote set-url origin "$CURRENT_URL"
-                fi
-                ;;
-            *)
-                echo "❌ 无法识别 URL 协议，请检查"
-                ;;
-        esac
-    fi
+# 自托管模式：vibe-control 是 symlink → 直接 git pull 真实仓库
+if [ -L "$VIBE_ROOT" ]; then
+    echo "自托管模式，更新主仓库..."
+    git pull || { echo "❌ 拉取失败，请检查网络"; exit 1; }
+    echo "✅ 主仓库已更新"
+else
+    # 普通项目：全量重新克隆（不保留嵌套 .git）
+    REPO_URL="https://github.com/yangsang12138/vibe-control.git"
+    echo "重新克隆 vibe-control..."
+    rm -rf "$VIBE_ROOT"
+    git clone "$REPO_URL" "$VIBE_ROOT" || { echo "❌ 克隆失败，请检查网络"; exit 1; }
+    rm -rf "$VIBE_ROOT/.git"
+    echo "✅ 已更新并清除内部 .git"
 fi
 
 # 重新注入

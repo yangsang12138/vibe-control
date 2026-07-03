@@ -17,11 +17,12 @@ if [ -f "core/AI_CONTROL.md" ]; then
     echo "⏭️  检测到 vibe-control 自身仓库，跳过克隆"
     VIBE_ROOT="$(pwd)"
 else
-    if [ -d "vibe-control/.git" ]; then
+    if [ -d "vibe-control" ]; then
         echo "⏭️  vibe-control 已存在"
     else
         echo "克隆 vibe-control..."
         git clone "$REPO_URL" vibe-control
+        rm -rf vibe-control/.git
     fi
     VIBE_ROOT="$(pwd)/vibe-control"
 fi

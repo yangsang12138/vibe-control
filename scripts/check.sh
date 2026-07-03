@@ -103,6 +103,16 @@ else
     FAIL=$((FAIL+1))
 fi
 
+# 嵌套 Git 仓库检测（vibe-control 不应有独立 .git）
+if [ -d "vibe-control/.git" ] && [ ! -L "vibe-control" ]; then
+    echo "❌ vibe-control/.git 存在嵌套 Git 仓库"
+    echo "   运行 bash vibe-control/scripts/sync-core.sh 清理"
+    FAIL=$((FAIL+1))
+else
+    echo "✅ 无嵌套 Git 仓库"
+    PASS=$((PASS+1))
+fi
+
 # 项目边界扫描
 echo "项目边界扫描..."
 OUTSIDE_REFS=0
