@@ -168,8 +168,30 @@ scan_bash() {
                 target="${BASH_REMATCH[1]}"
                 [ -f "$target" ] && echo "$relpath:$target" >> "$DEPS_FILE" && found=1
             fi
+            # bash "$SCRIPT_DIR/foo.sh"
+            if [[ "$trimmed" =~ bash[[:space:]]+\"\$SCRIPT_DIR/([^\"]+\.sh)\" ]]; then
+                target="$(dirname "$relpath")/${BASH_REMATCH[1]}"
+                [ -f "$target" ] && echo "$relpath:$target" >> "$DEPS_FILE" && found=1
+            fi
+            # bash "${VARIABLE}foo.sh" (with quotes)
+            if [[ "$trimmed" =~ bash[[:space:]]+\"\$\{[A-Z_]+\}([a-zA-Z0-9_/.-]+\.sh)\" ]]; then
+                target="${BASH_REMATCH[1]}"
+                target="${target#/}"
+                [ -f "$target" ] && echo "$relpath:$target" >> "$DEPS_FILE" && found=1
+            fi
+            # bash ${VARIABLE}foo.sh (no quotes)
+            if [[ "$trimmed" =~ bash[[:space:]]+\$\{[A-Z_]+\}([a-zA-Z0-9_/.-]+\.sh) ]]; then
+                target="${BASH_REMATCH[1]}"
+                target="${target#/}"
+                [ -f "$target" ] && echo "$relpath:$target" >> "$DEPS_FILE" && found=1
+            fi
+            # bash "$VIBE_ROOT/scripts/foo.sh"
+            if [[ "$trimmed" =~ bash[[:space:]]+\"\$VIBE_ROOT/scripts/([^\"]+\.sh)\" ]]; then
+                target="vibe-control/scripts/${BASH_REMATCH[1]}"
+                [ -f "$target" ] && echo "$relpath:$target" >> "$DEPS_FILE" && found=1
+            fi
         done < "$file"
-    done < <(find . -name "*.sh" \
+    done < <(find . \( -name "*.sh" -o -name "pre-commit" -o -name "pre-push" \) \
         -not -path "./vibe-control/*" \
         -not -path "./.vibe/*" \
         -not -path "./.git/*" \
