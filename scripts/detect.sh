@@ -73,6 +73,25 @@ fi
 
 [ -z "$PROJECT_TYPE" ] && PROJECT_TYPE="Unknown"
 
+# --- 源码目录探测 ---
+SOURCE_DIRS=""
+for d in src app lib pages components scripts; do
+    if [ -d "$d" ]; then
+        [ -n "$SOURCE_DIRS" ] && SOURCE_DIRS="$SOURCE_DIRS, $d" || SOURCE_DIRS="$d"
+    fi
+done
+
+# 如果没有探测到标准目录，列出包含源码的一级子目录
+if [ -z "$SOURCE_DIRS" ]; then
+    for d in */; do
+        name="${d%/}"
+        case "$name" in
+            .vibe|.git|vibe-control|node_modules|venv|.venv|__pycache__|.env|dist|build|data|db|.github|.vscode|.idea) continue ;;
+            *) [ -d "$name" ] && [ -n "$(ls -A "$name" 2>/dev/null)" ] && SOURCE_DIRS="${SOURCE_DIRS}${SOURCE_DIRS:+, }$name" ;;
+        esac
+    done
+fi
+
 # --- 工具链检测 ---
 TYPE_CHECK_COMMAND=""
 LINT_COMMAND=""
@@ -146,7 +165,8 @@ cat > "$OUT" << JSONEOF
   "LINT_COMMAND": "$LINT_COMMAND",
   "TEST_COMMAND": "$TEST_COMMAND",
   "COVERAGE_THRESHOLD": "$COVERAGE_THRESHOLD",
-  "BUILD_COMMAND": "$BUILD_COMMAND"
+  "BUILD_COMMAND": "$BUILD_COMMAND",
+  "SOURCE_DIRS": "$SOURCE_DIRS"
 }
 JSONEOF
 

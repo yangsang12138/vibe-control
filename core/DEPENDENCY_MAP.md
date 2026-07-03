@@ -23,6 +23,7 @@ graph TD
     s_inject_sh[inject.sh]
     s_pr-check_sh[pr-check.sh]
     s_recover_sh[recover.sh]
+    s_scan-modules_sh[scan-modules.sh]
     s_scope-check_sh[scope-check.sh]
     s_status_sh[status.sh]
     s_sync-core_sh[sync-core.sh]
@@ -59,6 +60,7 @@ graph TD
     s_sync-templates.sh --> s_detect.sh
     s_sync-templates.sh --> s_fill-templates.sh
     s_sync-templates.sh --> s_generate-depmap.sh
+    s_sync-templates.sh --> s_scan-modules.sh
     s_inject.sh -->|写入| _gitignore
     s_inject.sh -->|写入| _opencode_opencode_json
     s_inject.sh -.->|安装| _cursorrules
@@ -81,6 +83,7 @@ graph TD
 | `inject.sh` | init.sh, sync-core.sh | 中 | 调用方返回值或接口需同步 |
 | `pr-check.sh` | pre-push | 中 | 调用方返回值或接口需同步 |
 | `recover.sh` | SKILL.md, check.sh | 中 | 调用方返回值或接口需同步 |
+| `scan-modules.sh` | sync-templates.sh | 中 | 调用方返回值或接口需同步 |
 | `scope-check.sh` | SKILL.md | 中 | 调用方返回值或接口需同步 |
 | `status.sh` | - | 低 | 叶子节点，影响范围有限 |
 | `sync-core.sh` | - | 低 | 叶子节点，影响范围有限 |
@@ -136,6 +139,10 @@ graph TD
 - [ ] SKILL.md — 工作流中引用需同步
 - [ ] check.sh — 调用方返回值或接口需同步
 
+### 修改 scripts/scan-modules.sh
+- [ ] scripts/scan-modules.sh — 修改本身
+- [ ] sync-templates.sh — 调用方返回值或接口需同步
+
 ### 修改 scripts/scope-check.sh
 - [ ] scripts/scope-check.sh — 修改本身
 - [ ] SKILL.md — 工作流中引用需同步
@@ -160,24 +167,5 @@ graph TD
 <!-- DEPGRAPH_END -->
 
 <!-- PROJECT_DEPS_START -->
-<!-- 以下为项目模块依赖区，由用户手动填写。sync-templates 会自动保留此区间内容。 -->
-
-## 项目模块依赖
-
-> 填写目标项目的模块间依赖关系。修改任意模块前，先查看本表确认影响范围。
-
-### 模块关系表
-
-| 模块路径 | 功能描述 | 被依赖方 | 影响说明 |
-|---|---|---|---|
-| `[示例] src/auth/` | 用户认证 | `src/api/`, `src/pages/` | 修改 JWT 逻辑需联动 API 校验 |
-
-### 强耦合模块对
-
-> 修改其中一方时必须联动检查另一方。
-
-```
-- **[模块A]** ↔ **[模块B]**：[说明关联关系及联动检查要点]
-```
-
+<!-- 由 scan-modules.sh 自动生成，每次 sync-templates 时刷新 -->
 <!-- PROJECT_DEPS_END -->

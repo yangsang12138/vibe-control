@@ -21,5 +21,8 @@ bash "$SCRIPT_DIR/fill-templates.sh" ".vibe/detect.json" "$TEMPLATE_DIR" ".vibe/
 # 3. 重新生成依赖关系图
 bash "$SCRIPT_DIR/generate-depmap.sh"
 
+# 4. 扫描项目模块依赖
+bash "$SCRIPT_DIR/scan-modules.sh"
+
 echo "================================"
 echo "✅ 模板同步完成！运行 bash vibe-control/scripts/check.sh 验证"
