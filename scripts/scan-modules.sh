@@ -96,15 +96,16 @@ scan_python() {
                 [ -n "$resolved" ] && echo "$relpath:$resolved" >> "$DEPS_FILE" && found=1
             fi
         done < "$file"
-    done < <(find . -name "*.py" \
-        -not -path "./vibe-control/*" \
-        -not -path "./.vibe/*" \
-        -not -path "./.git/*" \
-        -not -path "./venv/*" \
-        -not -path "./.venv/*" \
-        -not -path "./__pycache__/*" \
+    done < <(find . \( -name "*.py" \) \
+        -not -path "*/vibe-control/*" \
+        -not -path "*/.vibe/*" \
+        -not -path "*/.git/*" \
+        -not -path "*/venv/*" \
+        -not -path "*/.venv/*" \
+        -not -path "*/node_modules/*" \
         -not -path "*/__pycache__/*" \
-        -not -path "./node_modules/*" \
+        -not -path "*/dist/*" \
+        -not -path "*/build/*" \
         2>/dev/null)
 
     return $((! found))
@@ -138,13 +139,13 @@ scan_js() {
                 fi
             fi
         done < "$file"
-    done < <(find . -name "*.js" -o -name "*.ts" -o -name "*.tsx" -o -name "*.jsx" \
-        -not -path "./vibe-control/*" \
+    done < <(find . \( -name "*.js" -o -name "*.ts" -o -name "*.tsx" -o -name "*.jsx" \) \
+        -not -path "*/vibe-control/*" \
         -not -path "./.vibe/*" \
-        -not -path "./.git/*" \
-        -not -path "./node_modules/*" \
-        -not -path "./dist/*" \
-        -not -path "./build/*" \
+        -not -path "*/.git/*" \
+        -not -path "*/node_modules/*" \
+        -not -path "*/dist/*" \
+        -not -path "*/build/*" \
         2>/dev/null)
 
     return $((! found))
@@ -194,7 +195,7 @@ scan_bash() {
     done < <(find . \( -name "*.sh" -o -name "pre-commit" -o -name "pre-push" \) \
         -not -path "./vibe-control/*" \
         -not -path "./.vibe/*" \
-        -not -path "./.git/*" \
+        -not -path "*/.git/*" \
         2>/dev/null)
 
     return $((! found))
@@ -326,8 +327,15 @@ case "$PROJECT_TYPE" in
         fi
         ;;
     *)
-        echo "⏭️  未知项目类型 ($PROJECT_TYPE)，跳过模块扫描"
-        exit 0
+        echo "⏭️  未知项目类型 ($PROJECT_TYPE)，尝试所有扫描器..."
+        PY=0; JS=0; BASH=0
+        scan_python && PY=1
+        scan_js && JS=1
+        scan_bash && BASH=1
+        if [ $PY -eq 0 ] && [ $JS -eq 0 ] && [ $BASH -eq 0 ]; then
+            echo "⏭️  未检测到任何已知源码依赖"
+            exit 0
+        fi
         ;;
 esac
 

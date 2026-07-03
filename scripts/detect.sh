@@ -58,14 +58,47 @@ TECH_STACK="${TECH_STACK}${TECH_STACK:+, }${OS}"
 [ -f "package.json" ] && TECH_STACK="${TECH_STACK}, Node.js $(node -v 2>/dev/null | sed 's/v//')"
 
 # --- 项目类型推断 ---
+# 根目录检测
 if [ -f "next.config.js" ] || [ -f "next.config.ts" ] || [ -f "next.config.mjs" ]; then
     PROJECT_TYPE="Web Application (Next.js)"
 elif [ -f "astro.config.mjs" ] || [ -f "astro.config.ts" ]; then
     PROJECT_TYPE="Static Site (Astro)"
-elif [ -f "vite.config.ts" ] || [ -f "vite.config.js" ]; then
+elif [ -f "vite.config.ts" ] || [ -f "vite.config.js" ] || \
+     [ -f "frontend/vite.config.ts" ] || [ -f "frontend/vite.config.js" ] || \
+     [ -f "client/vite.config.ts" ] || [ -f "client/vite.config.js" ]; then
     PROJECT_TYPE="Frontend App (Vite)"
-elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ]; then
+elif [ -f "requirements.txt" ] || [ -f "pyproject.toml" ] || \
+     [ -f "backend/requirements.txt" ] || [ -f "backend/pyproject.toml" ]; then
     PROJECT_TYPE="Python Application"
+# 子目录 TS 检测（前端项目，根目录无 package.json 但有子目录 tsconfig）
+elif [ -f "tsconfig.json" ] || [ -f "frontend/tsconfig.json" ] || [ -f "client/tsconfig.json" ]; then
+    NODE_PKG=""
+    for p in package.json frontend/package.json client/package.json; do
+        if [ -f "$p" ]; then
+            NODE_PKG="$p"
+            break
+        fi
+    done
+    if [ -f "$NODE_PKG" ]; then
+        DEPS=$(node -e "try{
+            const p=require('./$NODE_PKG');
+            const d={...p.dependencies,...p.devDependencies};
+            if(d.react || d['react-dom']) console.log('React');
+            if(d.vue || d.nuxt) console.log('Vue');
+            if(d.next) console.log('Next.js');
+            if(d.vite) console.log('Vite');
+            if(d.express) console.log('Express');
+        }catch(e){}" 2>/dev/null)
+        case "$DEPS" in
+            *Next*) PROJECT_TYPE="Web Application (Next.js)" ;;
+            *Vite*) PROJECT_TYPE="Frontend App (Vite)" ;;
+            *React*) PROJECT_TYPE="Frontend App (React)" ;;
+            *Vue*) PROJECT_TYPE="Frontend App (Vue)" ;;
+            *Express*) PROJECT_TYPE="Node.js App (Express)" ;;
+            *) PROJECT_TYPE="Node.js Application" ;;
+        esac
+    fi
+# Bash Tool 检测
 elif [ -d "scripts" ]; then
     SH_COUNT=$(ls scripts/*.sh 2>/dev/null | wc -l | tr -d ' ')
     [ "$SH_COUNT" -ge 3 ] 2>/dev/null && PROJECT_TYPE="Bash Tool"
