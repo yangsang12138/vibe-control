@@ -18,10 +18,8 @@ bash "$SCRIPT_DIR/detect.sh"
 # 2. 填充模板
 bash "$SCRIPT_DIR/fill-templates.sh" ".vibe/detect.json" "$TEMPLATE_DIR" ".vibe/core"
 
-# 3. 重新生成依赖关系图（仅在 vibe-control 自身仓库）
-if [ -f "core/AI_CONTROL.md" ]; then
-    bash "$SCRIPT_DIR/generate-depmap.sh"
-fi
+# 3. 重新生成依赖关系图
+bash "$SCRIPT_DIR/generate-depmap.sh"
 
 echo "================================"
 echo "✅ 模板同步完成！运行 bash vibe-control/scripts/check.sh 验证"

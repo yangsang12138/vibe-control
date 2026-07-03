@@ -73,6 +73,33 @@ fill_template() {
 }
 
 # 逐个处理模板文件
-for file in AI_CONTROL.md DEPENDENCY_MAP.md TASK_TEMPLATE.md; do
+for file in AI_CONTROL.md TASK_TEMPLATE.md; do
     fill_template "$TEMPLATE_DIR/$file" "$OUTPUT_DIR/$file"
 done
+
+# DEPENDENCY_MAP.md 特殊处理：保留用户项目依赖内容
+DEP_SRC="$TEMPLATE_DIR/DEPENDENCY_MAP.md"
+DEP_DST="$OUTPUT_DIR/DEPENDENCY_MAP.md"
+TMP_USER=$(mktemp)
+
+if [ ! -f "$DEP_SRC" ]; then
+    echo "⚠️  模板不存在：$DEP_SRC"
+else
+    if [ -f "$DEP_DST" ]; then
+        sed -n '/<!-- PROJECT_DEPS_START -->/,/<!-- PROJECT_DEPS_END -->/p' "$DEP_DST" > "$TMP_USER" 2>/dev/null || true
+    fi
+
+    fill_template "$DEP_SRC" "$DEP_DST"
+
+    if [ -s "$TMP_USER" ]; then
+        START_LINE=$(grep -n '<!-- PROJECT_DEPS_START -->' "$DEP_DST" | head -1 | cut -d: -f1)
+        END_LINE=$(grep -n '<!-- PROJECT_DEPS_END -->' "$DEP_DST" | head -1 | cut -d: -f1)
+        if [ -n "$START_LINE" ] && [ -n "$END_LINE" ]; then
+            head -n $((START_LINE - 1)) "$DEP_DST" > "${DEP_DST}.tmp"
+            cat "$TMP_USER" >> "${DEP_DST}.tmp"
+            tail -n +$((END_LINE + 1)) "$DEP_DST" >> "${DEP_DST}.tmp"
+            mv "${DEP_DST}.tmp" "$DEP_DST"
+        fi
+    fi
+fi
+rm -f "$TMP_USER"
