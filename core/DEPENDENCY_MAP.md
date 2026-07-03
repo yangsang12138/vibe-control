@@ -40,14 +40,17 @@ graph TD
     _opencode_opencode_json[.opencode/opencode.json]
     _vibe_core_[.vibe/core/]
     _vibe_core_*_md[.vibe/core/*.md]
+    _vibe_core_DEPENDENCY_MAP_md[.vibe/core/DEPENDENCY_MAP.md]
     _vibe_tasks_*_md[.vibe/tasks/*.md]
     _vibe_tasks_YYYYMMDD[.vibe/tasks/YYYYMMDD]
     core_AI_CONTROL_md[core/AI_CONTROL.md]
+    core_DEPENDENCY_MAP_md[core/DEPENDENCY_MAP.md]
     vibe-control[vibe-control]
     end
 
     s_SKILL.md --> s_check.sh
     s_SKILL.md --> s_recover.sh
+    s_SKILL.md --> s_scan-modules.sh
     s_SKILL.md --> s_scope-check.sh
     s_SKILL.md --> s_sync-templates.sh
     s_SKILL.md --> s_task-log.sh
@@ -83,7 +86,7 @@ graph TD
 | `inject.sh` | init.sh, sync-core.sh | 中 | 调用方返回值或接口需同步 |
 | `pr-check.sh` | pre-push | 中 | 调用方返回值或接口需同步 |
 | `recover.sh` | SKILL.md, check.sh | 中 | 调用方返回值或接口需同步 |
-| `scan-modules.sh` | sync-templates.sh | 中 | 调用方返回值或接口需同步 |
+| `scan-modules.sh` | SKILL.md, sync-templates.sh | 中 | 调用方返回值或接口需同步 |
 | `scope-check.sh` | SKILL.md | 中 | 调用方返回值或接口需同步 |
 | `status.sh` | - | 低 | 叶子节点，影响范围有限 |
 | `sync-core.sh` | - | 低 | 叶子节点，影响范围有限 |
@@ -141,6 +144,7 @@ graph TD
 
 ### 修改 scripts/scan-modules.sh
 - [ ] scripts/scan-modules.sh — 修改本身
+- [ ] SKILL.md — 工作流中引用需同步
 - [ ] sync-templates.sh — 调用方返回值或接口需同步
 
 ### 修改 scripts/scope-check.sh

@@ -107,8 +107,8 @@ scan_python() {
         -not -path "./node_modules/*" \
         2>/dev/null)
 
-    return $found
-}
+    return $((! found))
+} 
 
 # ============ JS/TS 解析器 ============
 
@@ -147,7 +147,7 @@ scan_js() {
         -not -path "./build/*" \
         2>/dev/null)
 
-    return $found
+    return $((! found))
 }
 
 # ============ Bash 解析器 ============
@@ -175,7 +175,7 @@ scan_bash() {
         -not -path "./.git/*" \
         2>/dev/null)
 
-    return $found
+    return $((! found))
 }
 
 # ============ 依赖内容生成 ============
