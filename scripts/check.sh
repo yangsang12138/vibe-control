@@ -103,6 +103,33 @@ else
     FAIL=$((FAIL+1))
 fi
 
+# 项目边界扫描
+echo "项目边界扫描..."
+OUTSIDE_REFS=0
+if git rev-parse --git-dir > /dev/null 2>&1; then
+    GIT_ROOT=$(git rev-parse --show-toplevel 2>/dev/null)
+    for file in $(git diff --cached --name-only 2>/dev/null; git diff --name-only 2>/dev/null); do
+        [ ! -f "$file" ] && continue
+        _dir=$(dirname "$file")
+        while IFS= read -r ref; do
+            [ -z "$ref" ] && continue
+            resolved=$(cd "$_dir" 2>/dev/null && realpath "$ref" 2>/dev/null || echo "")
+            case "$resolved" in
+                "$GIT_ROOT"*) continue;;
+                "") continue;;
+                *) echo "❌ $file 引用项目外路径: $ref → $resolved"; OUTSIDE_REFS=1;;
+            esac
+        done < <(grep -oE '\.\./[a-zA-Z0-9_/.-]+' "$file" 2>/dev/null || true)
+    done
+fi
+if [ $OUTSIDE_REFS -eq 0 ]; then
+    echo "✅ 无跨项目路径引用"
+    PASS=$((PASS+1))
+else
+    echo "   请移除跨项目路径引用，或改为相对项目内的路径"
+    FAIL=$((FAIL+1))
+fi
+
 # 检查 DEPENDENCY_MAP 是否过时（仅限 vibe-control 自身仓库）
 if [ -f "core/AI_CONTROL.md" ] && [ -d "scripts" ]; then
     echo "检查 DEPENDENCY_MAP 是否过时..."
