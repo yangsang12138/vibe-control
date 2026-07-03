@@ -44,6 +44,16 @@ bash vibe-control/scripts/scope-check.sh <目标路径>
 
 > 🚫 跳过第0步直接访问项目外文件，视为严重违规（违反 `AI_CONTROL.md` 约束第11条）。
 
+### 0d. 刷新项目模块依赖表
+
+**每次新任务开始时，必须刷新 `.vibe/core/DEPENDENCY_MAP.md` 的 PROJECT_DEPS 区**，确保第2步影响分析基于最新模块依赖数据：
+
+```bash
+bash vibe-control/scripts/scan-modules.sh
+```
+
+> 该命令解析项目的 `import`/`require`/`source` 语句，自动生成模块依赖图和矩阵。无额外依赖，执行时间 < 1 秒。
+
 ## 第1步：加载上下文
 
 **必须**读取 **`core/AI_CONTROL.md`** 和 **`core/DEPENDENCY_MAP.md`**（如果 `.vibe/core/` 存在则读它），了解：
